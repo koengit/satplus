@@ -57,7 +57,7 @@ import Data.IORef
 import Data.Maybe( fromMaybe )
 
 ------------------------------------------------------------------------
--- * The Solver object
+-- The Solver object
 
 -- | The type of a Solver object
 data Solver = Solver M.Solver (IORef (Maybe Lit))
@@ -79,7 +79,7 @@ withNewSolver :: (Solver -> IO a) -> IO a
 withNewSolver h = M.withNewSolver (\s -> do ref <- newIORef Nothing; h (Solver s ref))
 
 ------------------------------------------------------------------------
--- * Literals
+-- Literals
 
 -- | The type of a literal
 data Lit = Bool Bool | Lit M.Lit
@@ -112,7 +112,7 @@ pos :: Lit -> Bool
 pos x = x < neg x
 
 ------------------------------------------------------------------------
--- * Clauses
+-- Clauses
 
 -- | Add a clause in a given Solver. (The argument list is thus /disjunctive/.)
 addClause :: Solver -> [Lit] -> IO ()
@@ -121,7 +121,7 @@ addClause (Solver s _) xs
   | otherwise      = do M.addClause s [ x | Lit x <- xs ]; return ()
 
 ------------------------------------------------------------------------
--- * Solving
+-- Solving
 
 -- | Try to find a model of all clauses in the given Solver, under the
 -- assumptions of the given arguments. (The argument list is thus /conjunctive/.)
@@ -172,11 +172,12 @@ modelValueMaybe (Solver s _) (Lit x) =
   do M.modelValue s x
 
 ------------------------------------------------------------------------
--- * Implied constants
+-- Implied constants
 
 -- | Check whether or not a given literal has received a top-level value
 -- in the given Solver. This can happen when the literal is implied to be 
--- False or True by the current set of clauses.
+-- False or True by the current set of clauses. There are no guarantees as to
+-- when this actually happens.
 valueMaybe :: Solver -> Lit -> IO (Maybe Bool)
 valueMaybe _            (Bool b) = return (Just b)
 valueMaybe (Solver s _) (Lit x)  = M.value s x
