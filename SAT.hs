@@ -56,8 +56,6 @@ import qualified MiniSat as M
 import Data.IORef
 import Data.Maybe( fromMaybe )
 
--- | Hej hopp
-
 ------------------------------------------------------------------------
 -- * The Solver object
 
