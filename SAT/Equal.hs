@@ -38,10 +38,12 @@ class Equal a where
 ------------------------------------------------------------------------
 
 -- | Add constraints to the Solver that state that the arguments are equal.
+-- See also 'equalOr'.
 equal :: Equal a => Solver -> a -> a -> IO ()
 equal = unconditionally equalOr
 
 -- | Add constraints to the Solver that state that the arguments are not equal.
+-- See also 'notEqualOr'.
 notEqual :: Equal a => Solver -> a -> a -> IO ()
 notEqual = unconditionally notEqualOr
 

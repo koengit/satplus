@@ -1,15 +1,32 @@
-module SAT.Val where
+module SAT.Val(
+  -- * The Val type
+    Val
+  , newVal
+  , val
+  
+  -- * Inspection
+  , (.=)
+  , domain
 
-import SAT
+  -- * Models
+  , modelValue
+  )
+ where
+
+import qualified SAT
+import SAT hiding ( modelValue )
 import SAT.Util( usort )
 import SAT.Bool( atMostOne )
 import SAT.Equal
 
 ------------------------------------------------------------------------
 
+-- | The Val type, for representing symbolic values.
 newtype Val a = Val [(Lit,a)]
  deriving ( Eq, Ord, Show )
 
+-- | Creates a symbolic value, with concrete values all elements of the specified list.
+-- The list has to be non-empty.
 newVal :: Ord a => Solver -> [a] -> IO (Val a)
 newVal s xs =
   case xs' of
@@ -24,12 +41,16 @@ newVal s xs =
  where
   xs' = usort xs
 
+-- | Creates a symbolic value with only one concrete element.
 val :: a -> Val a
 val x = Val [(true,x)]
 
+-- | Returns all possible concrete values for a symbolic value.
 domain :: Val a -> [a]
 domain (Val qxs) = map snd qxs
 
+-- | Returns the literal representing the symbolic value having the concrete
+-- specified value.
 (.=) :: Ord a => Val a -> a -> Lit
 Val qxs .= x = go qxs
  where
@@ -73,6 +94,8 @@ stitch (Val pxs) (Val qys) = go pxs qys
 
 ------------------------------------------------------------------------
 
+-- | Returns the concrete value of the symbolic value in the found model.
+-- (/Only use when 'solve' has returned True!/)
 modelValue :: Solver -> Val a -> IO a
 modelValue s (Val qxs) = go qxs
  where

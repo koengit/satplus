@@ -78,13 +78,13 @@ equiv s x y = xorl s [neg x, y]
 -- * Boolean constraints
 
 -- | Add clauses that constrain the list of literals to have at most one
--- element to be True.
+-- element to be True. See also 'atMostOneOr'.
 atMostOne :: Solver -> [Lit] -> IO ()
 atMostOne = unconditionally atMostOneOr
 
 -- | Add clauses that constrain the list of literals to have the specified
 -- parity, as a Bool. The parity of a list says whether the number of True
--- literals is even (False) or odd (True).
+-- literals is even (False) or odd (True). See also 'parityOr'
 parity :: Solver -> [Lit] -> Bool -> IO ()
 parity = unconditionally parityOr
 
