@@ -1,15 +1,33 @@
-module SAT.Equal where
+module SAT.Equal(
+  -- * Simple Equality
+    equal
+  , notEqual
+  -- * Type class Equal
+  , Equal(..)
+  )
+ where
 
 import SAT
 import SAT.Bool
-import SAT.Util( here )
+import SAT.Util( unconditionally )
 
 ------------------------------------------------------------------------
 
+-- | Type class for SAT-things that can be equal or not.
 class Equal a where
-  equalOr    :: Solver -> [Lit] -> a -> a -> IO ()
-  notEqualOr :: Solver -> [Lit] -> a -> a -> IO ()
+  -- | Add constraints to the Solver that state that the arguments are equal,
+  -- under the presence of a /disjunctive prefix/.
+  -- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function without prefix
+  -- is called 'equal'.)
+  equalOr :: Solver -> [Lit] {- ^ prefix -} -> a -> a -> IO ()
 
+  -- | Add constraints to the Solver that state that the arguments are not equal,
+  -- under the presence of a /disjunctive prefix/.
+  -- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function without prefix
+  -- is called 'notEqual'.)
+  notEqualOr :: Solver -> [Lit] {- ^ prefix -} -> a -> a -> IO ()
+
+  -- | Return a literal that represents the arguments being equal or not.
   isEqual :: Equal a => Solver -> a -> a -> IO Lit
   isEqual s x y =
     do q <- newLit s
@@ -19,11 +37,13 @@ class Equal a where
 
 ------------------------------------------------------------------------
 
+-- | Add constraints to the Solver that state that the arguments are equal.
 equal :: Equal a => Solver -> a -> a -> IO ()
-equal = here equalOr
+equal = unconditionally equalOr
 
+-- | Add constraints to the Solver that state that the arguments are not equal.
 notEqual :: Equal a => Solver -> a -> a -> IO ()
-notEqual = here notEqualOr
+notEqual = unconditionally notEqualOr
 
 ------------------------------------------------------------------------
 
