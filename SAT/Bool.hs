@@ -49,19 +49,20 @@ xorl :: Solver -> [Lit] -> IO Lit
 xorl s xs =
   case xs'' of
     []  -> do return (bool p)
-    [x] -> do return (if p then x else neg x)
+    [x] -> do return (if p then neg x else x)
     _   -> do y <- newLit s
-              parity s (neg y : xs'') p
+              parity s (y : xs'') p
               return y
  where
   xs'       = filter (/= false) (sort xs)
   (xs0,xs1) = partition pos (filter (/= true) xs')
-  (p,xs'')  = go (even (length (filter (== true) xs'))) [] xs0 (sort (map neg xs1))
+  (p,xs'')  = go (odd (length (filter (== true) xs'))) [] xs0 (sort (map neg xs1))
   
-  go p ys []        xs1       = (p, map neg xs1 ++ ys)
-  go p ys xs0       []        = (p, xs0 ++ ys)
+  go p ys []        []        = (p, ys)
   go p ys (x:y:xs0) xs1       | x == y = go p ys xs0 xs1
   go p ys xs0       (x:y:xs1) | x == y = go p ys xs0 xs1
+  go p ys []        (x1:xs1)  = go p (neg x1:ys) [] xs1
+  go p ys (x0:xs0)  []        = go p (x0:ys) xs0 []
   go p ys (x0:xs0)  (x1:xs1)  =
     case x0 `compare` x1 of
       LT -> go p (x0:ys) xs0 (x1:xs1)
@@ -139,8 +140,8 @@ parityOr s pre xs p = go pre (length xs) xs p
   
   go pre n xs p =
     do x <- newLit s
-       go pre (k+1)   (x : take k xs) p
-       go pre (n-k+1) (x : drop k xs) p
+       go pre (k+1) (x : take k xs) p
+       go pre (n-k+1) ((if p then neg x else x) : drop k xs) p
    where
     k = n `div` 2
 
