@@ -64,6 +64,10 @@ printOpti v x y =
 -- the result of 'solveOptimize' will be Nothing. It is still possible to read off the best solution
 -- found using functions such as 'modelValue'.
 --
+-- The optimization performs a binary search. The callback function gets two arguments: @minTry@
+-- and @minReached@, which are the values of the best value still considered possible (@minTry@)
+-- and the best found value (@minReached@), respectively.
+--
 -- This function minimizes. For maximization, use the function 'invert' on the objective first.
 solveOptimize :: Solver -> [Lit] {- ^ assumptions -} -> Unary {- ^ objective (for minimization) -} -> (Int -> Int -> IO Bool) {- ^ callback -} -> IO (Maybe Bool)
 solveOptimize s ass obj callback =
