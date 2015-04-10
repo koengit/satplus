@@ -4,6 +4,7 @@ module SAT.Unary(
   , newUnary
   , zero
   , digit
+  , invert
   , maxValue
   
   -- * Comparison against constants
@@ -14,6 +15,8 @@ module SAT.Unary(
   , add
   , addList
 
+  -- * Models
+  , modelValue
   )
  where
 
@@ -46,6 +49,10 @@ zero = Unary 0 []
 -- | Creates a 1-digit unary number, specified by the given literal.
 digit :: Lit -> Unary
 digit x = Unary 1 [x]
+
+-- | Inverts a unary number; computes /maxValue n - n/. Used to maximize instead of minimize.
+invert :: Unary -> Unary
+invert (Unary n xs) = Unary n (reverse (map neg xs))
 
 -- | Compares a unary number with a constant.
 (.<=), (.<), (.>=), (.>) :: Unary -> Int -> Lit
@@ -128,8 +135,8 @@ addList s us = go (sort us)
     do u <- add s u1 u2
        go (insert u us)
 
--- | Return the numeric value of a unary number in the current model. (/Use only
--- when 'solve' has returned True!/)
+-- | Return the numeric value of a unary number in the current model.
+-- (/Use only when 'solve' has returned True!/)
 modelValue :: Solver -> Unary -> IO Int
 modelValue s (Unary _ xs) = go xs
  where

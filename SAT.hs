@@ -176,7 +176,7 @@ modelValueMaybe (Solver s _) (Lit x) =
 
 -- | Check whether or not a given literal has received a top-level value
 -- in the given Solver. This can happen when the literal is implied to be 
--- False or True by the current set of clauses. There are no guarantees as to
+-- False or True by the current set of clauses. There are no guarantees about
 -- when this actually happens.
 valueMaybe :: Solver -> Lit -> IO (Maybe Bool)
 valueMaybe _            (Bool b) = return (Just b)

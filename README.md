@@ -3,6 +3,8 @@
 This is a Haskell library for constraint programming using a SAT-solver,
 in particular MiniSAT.
 
+The names and types of these functions may change at any moment!
+
 ## Basic MiniSAT
 
 The basic MiniSAT functions are:
@@ -117,7 +119,7 @@ true, for example.
 type Unary
 
 zero   :: Unary
-one    :: Lit -> Unary
+digit  :: Lit -> Unary
 number :: Int -> Unary
 
 count    :: Solver ->        [Lit] -> IO Unary
@@ -144,7 +146,7 @@ These are handy when you want to represent numbers that are large.
 type Binary
 
 zero   :: Binary
-one    :: Lit -> Binary
+digit  :: Lit -> Binary
 number :: Integer -> Binary
 
 count    :: Solver ->        [Lit] -> IO Binary
@@ -165,27 +167,7 @@ modelValue :: Solver -> Binary -> IO Integer
 We also support linear arithmetic terms over a base type of variables
 (for example Lit, Unary, or Binary).
 
-```haskell
-type Term a
-
-var   :: a -> Term a
-con   :: Integer -> Term a
-(.+.) :: Term a -> Term a -> Term a
-(.*)  :: Integer -> Term a -> Term a
-```
-
-For these, we can generate equality and ordering constraints:
-
-```haskell
-instance Equal a => Equal (Term a)
-instance Order a => Order (Term a)
-```
-
-We also provide:
-
-```haskell
-modelValue :: Num b => (Solver -> a -> IO b) -> Solver -> Term a -> IO b
-```
+(not done yet)
 
 ## Minimization / Maximization
 
@@ -193,17 +175,8 @@ We also support finding solutions that are minimized or maximized w.r.t.
 a particular argument.
 
 ```haskell
-minimize :: Order a => Solver -> [Lit] -> a -> IO Bool
-maximize :: Order a => Solver -> [Lit] -> a -> IO Bool
-```
-    
-These functions will only find a minimal/maximal *solution*. In order to
-also *constrain* the problem to not exceed the found solution after the
-minimization/maximization, use these:
-
-```haskell
-minimizeAndConstrain :: Order a => Solver -> [Lit] -> a -> IO Bool
-maximizeAndConstrain :: Order a => Solver -> [Lit] -> a -> IO Bool
+solveMinimize :: Order a => Solver -> [Lit] -> Unary -> IO Bool
+solveMaximize :: Order a => Solver -> [Lit] -> Unary -> IO Bool
 ```
 
-TODO: Add a verbose mode. Add a timeout option of some sort.
+TODO: add optimization over binary numbers.
