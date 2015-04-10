@@ -30,9 +30,9 @@ andl s xs
   _      `overlap` []     = False
   (x:xs) `overlap` (y:ys) =
     case x `compare` y of
-	  LT -> xs `overlap` (y:ys)
-	  EQ -> True
-	  GT -> (x:xs) `overlap` ys
+      LT -> xs `overlap` (y:ys)
+      EQ -> True
+      GT -> (x:xs) `overlap` ys
 
 -- | Return a literal representing the disjunction (''big-or'') of the literals in the
 -- argument list. This function may create new literals and add constraints,
