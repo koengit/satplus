@@ -4,7 +4,7 @@ import SAT
 import SAT.Util( unconditionally, usort )
 import Data.List( partition, sort )
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- * Boolean functions
 
 -- | Return a literal representing the conjunction (''big-and'') of the
@@ -78,7 +78,7 @@ implies s x y = orl s [neg x, y]
 equiv :: Solver -> Lit -> Lit -> IO Lit
 equiv s x y = xorl s [neg x, y]
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- * Boolean constraints
 
 -- | Add clauses that constrain the list of literals to have at most one
@@ -92,7 +92,7 @@ atMostOne = unconditionally atMostOneOr
 parity :: Solver -> [Lit] -> Bool -> IO ()
 parity = unconditionally parityOr
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- * Boolean constraints with prefix
 
 -- | Add clauses that constrain the list of literals to have at most one
@@ -144,4 +144,4 @@ parityOr s pre xs p = go pre (length xs) xs p
    where
     k = n `div` 2
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------

@@ -56,7 +56,7 @@ import qualified MiniSat as M
 import Data.IORef
 import Data.Maybe( fromMaybe )
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- The Solver object
 
 -- | The type of a Solver object
@@ -81,7 +81,7 @@ withNewSolver h =
     do ref <- newIORef Nothing
        h (Solver s ref)
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Literals
 
 -- | The type of a literal
@@ -114,7 +114,7 @@ neg (Lit x)  = Lit (M.neg x)
 pos :: Lit -> Bool
 pos x = x < neg x
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Clauses
 
 -- | Add a clause in a given Solver. (The argument list is thus /disjunctive/.)
@@ -123,7 +123,7 @@ addClause (Solver s _) xs
   | true `elem` xs = do return ()
   | otherwise      = do M.addClause s [ x | Lit x <- xs ]; return ()
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Solving
 
 -- | Try to find a model of all clauses in the given Solver, under the
@@ -153,7 +153,7 @@ conflict (Solver s ref) =
                      return (map Lit xs)
        Just x  -> do return [x]
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | If the last call to 'solve' returned True, return the value of
 -- the specified literal in the found model.
@@ -175,7 +175,7 @@ modelValueMaybe _ (Bool b) =
 modelValueMaybe (Solver s _) (Lit x) =
   do M.modelValue s x
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- Implied constants
 
 -- | Check whether or not a given literal has received a top-level value
@@ -186,4 +186,4 @@ valueMaybe :: Solver -> Lit -> IO (Maybe Bool)
 valueMaybe _            (Bool b) = return (Just b)
 valueMaybe (Solver s _) (Lit x)  = M.value s x
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------

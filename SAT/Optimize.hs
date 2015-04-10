@@ -5,7 +5,7 @@ import SAT.Unary as U
 import Data.Maybe( fromJust )
 import System.IO( hFlush, stdout )
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- * Simple optimization
 
 -- | Like 'solve', but finds the minimum solution, where the objective is a
@@ -24,7 +24,7 @@ solveMaximize :: Solver -> [Lit] -> Unary -> IO Bool
 solveMaximize s ass obj =
   fromJust `fmap` solveOptimize s ass (invert obj) (\_ _ -> return True)
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- * Verbose optimization
 
 -- | A type to specify what to print during optimization
@@ -62,7 +62,7 @@ printOpti v x y =
   back = replicate n '\b'
   wipe = replicate n ' '
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- * General optimization
 
 -- | The most general optimization function. It supports a callback that at

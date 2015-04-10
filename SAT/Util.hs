@@ -3,7 +3,7 @@ module SAT.Util where
 import SAT
 import Data.List( sort, group )
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | Turn a Solver-function with prefix into a Solver-function without prefix.
 --
@@ -37,10 +37,10 @@ import Data.List( sort, group )
 unconditionally :: (Solver -> [Lit] -> abc) -> (Solver -> abc)
 unconditionally f = \s -> f s []
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | Sort and remove duplicates.
 usort :: Ord a => [a] -> [a]
 usort = map head . group . sort
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------

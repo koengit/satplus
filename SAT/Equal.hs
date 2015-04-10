@@ -11,7 +11,7 @@ import SAT
 import SAT.Bool
 import SAT.Util( unconditionally )
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | Type class for SAT-things that can be equal or not.
 class Equal a where
@@ -35,7 +35,7 @@ class Equal a where
        notEqualOr s [q] x y
        return q
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | Add constraints to the Solver that state that the arguments are equal.
 -- See also 'equalOr'.
@@ -47,7 +47,7 @@ equal = unconditionally equalOr
 notEqual :: Equal a => Solver -> a -> a -> IO ()
 notEqual = unconditionally notEqualOr
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 instance Equal () where
   equalOr    s pre _ _ = return ()
@@ -83,7 +83,7 @@ instance (Equal a, Equal b) => Equal (Either a b) where
   notEqualOr s pre (Right x) (Right y) = notEqualOr s pre x y
   notEqualOr s pre _         _         = return ()
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 instance (Equal a, Equal b, Equal c) => Equal (a,b,c) where
   equalOr    s pre x y = equalOr    s pre (encTriple x) (encTriple y)
@@ -105,4 +105,4 @@ instance Equal a => Equal [a] where
 encList []     = Nothing
 encList (x:xs) = Just (x,xs)
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------

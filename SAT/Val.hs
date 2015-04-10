@@ -19,7 +19,7 @@ import SAT.Util( usort )
 import SAT.Bool( atMostOne )
 import SAT.Equal
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | The Val type, for representing symbolic values.
 newtype Val a = Val [(Lit,a)]
@@ -61,7 +61,7 @@ Val qxs .= x = go qxs
       EQ -> q
       GT -> go qxs
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 instance Ord a => Equal (Val a) where
   equalOr s pre p q =
@@ -92,7 +92,7 @@ stitch (Val pxs) (Val qys) = go pxs qys
       EQ -> (Just p,  Just q,  x) : go pxs qys
       GT -> (Nothing, Just q,  y) : go ((p,x):pxs) qys
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | Returns the concrete value of the symbolic value in the found model.
 -- (/Only use when 'solve' has returned True!/)
@@ -103,4 +103,4 @@ modelValue s (Val qxs) = go qxs
   go ((q,x):qxs) = do b <- SAT.modelValue s q
                       if b then return x else go qxs
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------

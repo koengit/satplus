@@ -26,7 +26,7 @@ import SAT.Bool
 import SAT.Equal
 import Data.List( sort, insert )
 
-------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 -- | The type Unary, for unary numbers
 data Unary = Unary Int [Lit] -- sorted 11..1100..00
