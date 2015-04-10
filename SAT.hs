@@ -76,7 +76,10 @@ deleteSolver (Solver s _) =
 
 -- | Create a Solver object, and delete when done.
 withNewSolver :: (Solver -> IO a) -> IO a
-withNewSolver h = M.withNewSolver (\s -> do ref <- newIORef Nothing; h (Solver s ref))
+withNewSolver h =
+  M.withNewSolver $ \s ->
+    do ref <- newIORef Nothing
+       h (Solver s ref)
 
 ------------------------------------------------------------------------
 -- Literals
@@ -137,8 +140,9 @@ solve (Solver s ref) xs
        M.solve s [ x | Lit x <- xs ]
 
 -- | If the last call to 'solve' returned False, return the subset of the
--- assumptions given to 'solve' that actually lead to a contradiction. For example, if
--- the returned list is empty, there is a contradiction even without any assumptions.
+-- assumptions given to 'solve' that actually lead to a contradiction. For
+-- example, if the returned list is empty, there is a contradiction even
+-- without any assumptions.
 -- There are no guarantees about minimality of the subset.
 -- (/Only use when 'solve' has previously returned False!/)
 conflict :: Solver -> IO [Lit]

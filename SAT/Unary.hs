@@ -50,7 +50,8 @@ zero = Unary 0 []
 digit :: Lit -> Unary
 digit x = Unary 1 [x]
 
--- | Inverts a unary number; computes /maxValue n - n/. Used to maximize instead of minimize.
+-- | Inverts a unary number; computes /maxValue n - n/. Can b used to maximize
+-- instead of minimize.
 invert :: Unary -> Unary
 invert (Unary n xs) = Unary n (reverse (map neg xs))
 
@@ -65,7 +66,8 @@ Unary n xs .>= k
   | k >  n    = false
   | otherwise = xs !! (k-1)
 
--- | Returns a unary number that represents the number of True literals in the given list.
+-- | Returns a unary number that represents the number of True literals in
+-- the given list.
 count :: Solver -> [Lit] -> IO Unary
 count s xs = addList s (map digit xs)
 

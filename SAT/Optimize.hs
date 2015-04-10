@@ -8,17 +8,21 @@ import System.IO( hFlush, stdout )
 ------------------------------------------------------------------------
 -- * Simple optimization
 
--- | Like 'solve', but finds the minimum solution, where the objective is a specified unary number.
--- This function does not /commit/ to a minimal solution. If this is the desired behavior,
--- the user should manually add a clause with @obj .<= k@ afterwards.
+-- | Like 'solve', but finds the minimum solution, where the objective is a
+-- specified unary number. This function does not /commit/ to a minimal
+-- solution. If committing is the desired behavior, the user should manually
+-- add a clause with @obj .<= k@ afterwards.
 solveMinimize :: Solver -> [Lit] -> Unary -> IO Bool
-solveMinimize s ass obj = fromJust `fmap` solveOptimize s ass obj (\_ _ -> return True)
+solveMinimize s ass obj =
+  fromJust `fmap` solveOptimize s ass obj (\_ _ -> return True)
 
--- | Like 'solve', but finds the maximum solution, where the objective is a specified unary number.
--- This function does not /commit/ to a minimal solution. If this is the desired behavior,
--- the user should manually add a clause with @obj .>= k@ afterwards.
+-- | Like 'solve', but finds the maximum solution, where the objective is a
+-- specified unary number. This function does not /commit/ to a minimal
+-- solution. If this is the desired behavior, the user should manually add a
+-- clause with @obj .>= k@ afterwards.
 solveMaximize :: Solver -> [Lit] -> Unary -> IO Bool
-solveMaximize s ass obj = fromJust `fmap` solveOptimize s ass (invert obj) (\_ _ -> return True)
+solveMaximize s ass obj =
+  fromJust `fmap` solveOptimize s ass (invert obj) (\_ _ -> return True)
 
 ------------------------------------------------------------------------
 -- * Verbose optimization
@@ -32,11 +36,13 @@ data Verbosity
 
 -- | Like 'solveMinimum', but also prints information during optimization.
 solveMinimizeVerbose :: Solver -> [Lit] -> Unary -> Verbosity -> IO Bool
-solveMinimizeVerbose s ass obj v = fromJust `fmap` solveOptimize s ass obj (printOpti v)
+solveMinimizeVerbose s ass obj v =
+  fromJust `fmap` solveOptimize s ass obj (printOpti v)
 
 -- | Like 'solveMaximum', but also prints information during optimization.
 solveMaximizeVerbose :: Solver -> [Lit] -> Unary -> Verbosity -> IO Bool
-solveMaximizeVerbose s ass obj v = fromJust `fmap` solveOptimize s ass (invert obj) (printOpti' v)
+solveMaximizeVerbose s ass obj v =
+  fromJust `fmap` solveOptimize s ass (invert obj) (printOpti' v)
  where
   m = maxValue obj
   printOpti' v x y = printOpti v (m-y) (m-x)
@@ -59,17 +65,23 @@ printOpti v x y =
 ------------------------------------------------------------------------
 -- * General optimization
 
--- | The most general optimization function. It supports a callback that at each optimization
--- step can decide whether or not to continue. If the callback says not to continue (by returning False),
--- the result of 'solveOptimize' will be Nothing. It is still possible to read off the best solution
--- found using functions such as 'modelValue'.
+-- | The most general optimization function. It supports a callback that at
+-- each optimization step can decide whether or not to continue. If the
+-- callback says not to continue (by returning False),
+-- the result of 'solveOptimize' will be Nothing. It is still possible to
+-- read off the best solution found using functions such as 'modelValue'.
 --
--- The optimization performs a binary search. The callback function gets two arguments: @minTry@
--- and @minReached@, which are the values of the best value still considered possible (@minTry@)
--- and the best found value (@minReached@), respectively.
+-- The optimization performs a binary search. The callback function gets two
+-- arguments: @minTry@ and @minReached@, which are the values of the best
+-- value still considered possible (@minTry@) and the best found value
+-- (@minReached@), respectively.
 --
--- This function minimizes. For maximization, use the function 'invert' on the objective first.
-solveOptimize :: Solver -> [Lit] {- ^ assumptions -} -> Unary {- ^ objective (for minimization) -} -> (Int -> Int -> IO Bool) {- ^ callback -} -> IO (Maybe Bool)
+-- This function minimizes. For maximization, use the function 'invert' on
+-- the objective first.
+solveOptimize :: Solver -> [Lit] {- ^ assumptions -}
+                        -> Unary {- ^ objective (for minimization) -}
+                        -> (Int -> Int -> IO Bool) {- ^ callback -}
+                        -> IO (Maybe Bool)
 solveOptimize s ass obj callback =
   do b <- solve s ass
      if b then

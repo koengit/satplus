@@ -7,9 +7,9 @@ import Data.List( partition, sort )
 ------------------------------------------------------------------------
 -- * Boolean functions
 
--- | Return a literal representing the conjunction (''big-and'') of the literals in the
--- argument list. This function may create new literals and add constraints,
--- but tries to avoid doing this when possible.
+-- | Return a literal representing the conjunction (''big-and'') of the
+-- literals in the argument list. This function may create new literals and
+-- add constraints, but tries to avoid doing this when possible.
 andl :: Solver -> [Lit] -> IO Lit
 andl s xs
   | false `elem` xs = return false
@@ -18,7 +18,9 @@ andl s xs
                         []   -> do return true
                         [x]  -> do return x
                         xs'' -> do y <- newLit s
-                                   sequence_ [ addClause s [neg y, x] | x <- xs'' ]
+                                   sequence_ [ addClause s [neg y, x]
+                                             | x <- xs''
+                                             ]
                                    addClause s (y : map neg xs'')
                                    return y
  where
@@ -34,15 +36,15 @@ andl s xs
       EQ -> True
       GT -> (x:xs) `overlap` ys
 
--- | Return a literal representing the disjunction (''big-or'') of the literals in the
--- argument list. This function may create new literals and add constraints,
--- but tries to avoid doing this when possible.
+-- | Return a literal representing the disjunction (''big-or'') of the
+-- literals in the argument list. This function may create new literals and
+-- add constraints, but tries to avoid doing this when possible.
 orl :: Solver -> [Lit] -> IO Lit
 orl s = fmap neg . andl s . map neg
 
--- | Return a literal representing the parity (''big-xor'') of the literals in the
--- argument list. This function may create new literals and add constraints,
--- but tries to avoid doing this when possible.
+-- | Return a literal representing the parity (''big-xor'') of the literals
+-- in the argument list. This function may create new literals and add
+-- constraints, but tries to avoid doing this when possible.
 xorl :: Solver -> [Lit] -> IO Lit
 xorl s xs =
   case xs'' of
@@ -66,11 +68,13 @@ xorl s xs =
       EQ -> go (not p) ys xs0 xs1
       GT -> go p (neg x1:ys) (x0:xs0) xs1
 
--- | Return a literal representing the implication @a ==> b@ between two literals @a@ and @b@.
+-- | Return a literal representing the implication @a ==> b@ between two
+-- literals @a@ and @b@.
 implies :: Solver -> Lit -> Lit -> IO Lit
 implies s x y = orl s [neg x, y]
 
--- | Return a literal representing the equivalence @a \<=\> b@ of two literals @a@ and @b@.
+-- | Return a literal representing the equivalence @a \<=\> b@ of two
+-- literals @a@ and @b@.
 equiv :: Solver -> Lit -> Lit -> IO Lit
 equiv s x y = xorl s [neg x, y]
 
@@ -93,9 +97,11 @@ parity = unconditionally parityOr
 
 -- | Add clauses that constrain the list of literals to have at most one
 -- element to be True, under the presence of a /disjunctive prefix/.
--- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function without prefix
--- is called 'atMostOne'.)
-atMostOneOr :: Solver -> [Lit] {- ^ prefix -} -> [Lit] {- ^ literal set -} -> IO ()
+-- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function
+-- without prefix is called 'atMostOne'.)
+atMostOneOr :: Solver -> [Lit] {- ^ prefix -}
+                      -> [Lit] {- ^ literal set -}
+                      -> IO ()
 atMostOneOr s pre xs = go (length xs) xs
  where
   go n xs | n <= 5 =
@@ -113,9 +119,12 @@ atMostOneOr s pre xs = go (length xs) xs
 
 -- | Add clauses that constrain the list of literals to have the specified
 -- parity, as a Bool, under the presence of a /disjunctive prefix/.
--- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function without prefix
--- is called 'parity'.)
-parityOr :: Solver -> [Lit] {- ^ prefix -} -> [Lit] {- ^ literal set -} -> Bool {- ^ parity -} -> IO ()
+-- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function
+-- without prefix is called 'parity'.)
+parityOr :: Solver -> [Lit] {- ^ prefix -}
+                   -> [Lit] {- ^ literal set -}
+                   -> Bool {- ^ parity -}
+                   -> IO ()
 parityOr s pre xs p = go pre (length xs) xs p
  where
   go pre _ [] False =

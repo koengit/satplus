@@ -25,8 +25,8 @@ import SAT.Equal
 newtype Val a = Val [(Lit,a)]
  deriving ( Eq, Ord, Show )
 
--- | Creates a symbolic value, with concrete values all elements of the specified list.
--- The list has to be non-empty.
+-- | Creates a symbolic value, with concrete values all elements of the
+-- specified list. The list has to be non-empty.
 newVal :: Ord a => Solver -> [a] -> IO (Val a)
 newVal s xs =
   case xs' of

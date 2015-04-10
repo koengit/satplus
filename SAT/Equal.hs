@@ -17,14 +17,14 @@ import SAT.Util( unconditionally )
 class Equal a where
   -- | Add constraints to the Solver that state that the arguments are equal,
   -- under the presence of a /disjunctive prefix/.
-  -- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function without prefix
-  -- is called 'equal'.)
+  -- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function
+  -- without prefix is called 'equal'.)
   equalOr :: Solver -> [Lit] {- ^ prefix -} -> a -> a -> IO ()
 
-  -- | Add constraints to the Solver that state that the arguments are not equal,
-  -- under the presence of a /disjunctive prefix/.
-  -- (See 'SAT.Util.unconditionally' for what /prefix/ means. This function without prefix
-  -- is called 'notEqual'.)
+  -- | Add constraints to the Solver that state that the arguments are not
+  -- equal, under the presence of a /disjunctive prefix/.
+  -- (See 'SAT.Util.unconditionally' for what /prefix/ means.
+  -- This function without prefix is called 'notEqual'.)
   notEqualOr :: Solver -> [Lit] {- ^ prefix -} -> a -> a -> IO ()
 
   -- | Return a literal that represents the arguments being equal or not.
