@@ -89,7 +89,7 @@ atMostOne = unconditionally atMostOneOr
 
 -- | Add clauses that constrain the list of literals to have the specified
 -- parity, as a Bool. The parity of a list says whether the number of True
--- literals is even (False) or odd (True). See also 'parityOr'
+-- literals is even (False) or odd (True). See also 'parityOr'.
 parity :: Solver -> [Lit] -> Bool -> IO ()
 parity = unconditionally parityOr
 
