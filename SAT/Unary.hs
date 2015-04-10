@@ -4,7 +4,6 @@ module SAT.Unary(
   , newUnary
   , zero
   , digit
-  , invert
   , maxValue
   
   -- * Comparison against constants
@@ -15,6 +14,11 @@ module SAT.Unary(
   , add
   , addList
 
+  -- * Operations
+  , invert
+  , (//)
+  , modulo
+  
   -- * Models
   , modelValue
   )
@@ -24,7 +28,7 @@ import SAT hiding ( modelValue )
 import qualified SAT
 import SAT.Bool
 import SAT.Equal
-import Data.List( sort, insert )
+import Data.List( sort, insert, transpose )
 
 ------------------------------------------------------------------------------
 
@@ -65,6 +69,45 @@ Unary n xs .>= k
   | k <= 0    = true
   | k >  n    = false
   | otherwise = xs !! (k-1)
+
+-- | Integer division by a (strictly positive) constant.
+(//) :: Unary -> Int -> Unary
+Unary n xs // k =
+  -- Idea: take every k-th literal.
+  Unary (n `div` k)
+        [ x | (x,True) <- xs `zip` cycle (replicate (k-1) False ++ [True]) ]
+
+-- | Integer modulo a (strictly positive) constant.
+modulo :: Solver -> Unary -> Int -> IO Unary
+modulo s (Unary n xs) k =
+  -- Idea: We start with a unary number, say
+  --   1 1 1 1 1 1 1 0 0 0 0 0 0
+  -- and we take modulo, say 3. First, we divide in groups of 3:
+  --   [1 1 1] [1 1 1] [1 0 0] [0 0 0] [0]
+  -- and pad:
+  --   [1 1 1] [1 1 1] [1 0 0] [0 0 0] [0 0 0]
+  -- We know there will only be at most one group that contains
+  -- both 1's and 0's. That group is the answer (minus the last element
+  -- because we know it will be 0).
+  -- (If there is no such group, the answer is simply [0 0].)
+  -- First, we "neutralize" every group [1 1 1], by taking away the
+  -- last literal in each group, negating it, and and-ing it with the rest:
+  --   [0 0]   [0 0]   [1 0]   [0 0]   [0 0]
+  -- Then, we transpose:
+  --   [0 0 1 0 0]
+  --   [0 0 0 0 0]
+  -- and we take the or of each row:
+  --   [1 0]
+  -- which is the right answer.
+  do xss1 <- sequence [ sequence [ andl s [neg a, x] | x <- init as ]
+                      | as <- xss
+                      , let a = last as
+                      ]
+     ys <- sequence [ orl s bs | bs <- transpose xss1 ]
+     return (Unary (k-1) ys)
+ where
+  xss = map pad . takeWhile (not . null) . map (take k) . iterate (drop k) $ xs
+  pad = take k . (++ repeat false)
 
 -- | Returns a unary number that represents the number of True literals in
 -- the given list.
