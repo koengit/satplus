@@ -54,7 +54,7 @@ library
   exposed-modules:     SAT, SAT.Optimize, SAT.Unary, SAT.Util, SAT.Term, SAT.Order, SAT.Binary, SAT.Val, SAT.Bool, SAT.Equal
   
   -- Modules included in this library but not exported.
-  -- other-modules:       
+  -- other-modules:    SAT.Test
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
