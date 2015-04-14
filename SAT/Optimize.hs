@@ -9,7 +9,7 @@ import System.IO( hFlush, stdout )
 -- * Simple optimization
 
 -- | Like 'solve', but finds the minimum solution, where the objective is a
--- specified unary number. This function does not /commit/ to a minimal
+-- specified unary number. This function does not /commit/ to a
 -- solution. If committing is the desired behavior, the user should manually
 -- add a clause with @obj .<= k@ afterwards.
 solveMinimize :: Solver -> [Lit] -> Unary -> IO Bool
@@ -17,7 +17,7 @@ solveMinimize s ass obj =
   fromJust `fmap` solveOptimize s ass obj (\_ -> return True)
 
 -- | Like 'solve', but finds the maximum solution, where the objective is a
--- specified unary number. This function does not /commit/ to a minimal
+-- specified unary number. This function does not /commit/ to a
 -- solution. If this is the desired behavior, the user should manually add a
 -- clause with @obj .>= k@ afterwards.
 solveMaximize :: Solver -> [Lit] -> Unary -> IO Bool
