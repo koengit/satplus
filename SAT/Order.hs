@@ -87,13 +87,13 @@ instance Order Lit where
     | otherwise =
       do w <- newCompareLit s cmp p q
          when (cmp `elem` [LT, LEQ]) $
-           do addClause s [y, w]
-              addClause s [neg x, w]
-              addClause s [neg x, y]
+           do addClause s ([y, w] ++ pre)
+              addClause s ([neg x, w] ++ pre)
+              addClause s ([neg x, y] ++ pre)
          when (cmp `elem` [GT, GEQ]) $
-           do addClause s [x, w]
-              addClause s [neg y, w]
-              addClause s [neg y, x]
+           do addClause s ([x, w] ++ pre)
+              addClause s ([neg y, w] ++ pre)
+              addClause s ([neg y, x] ++ pre)
 
 instance (Order a, Order b) => Order (a,b) where
   compareOr s pre cmp t1 t2 =
