@@ -1,7 +1,8 @@
 module SAT.Equal(
-  -- * Simple Equality
+  -- * Constraints
     equal
   , notEqual
+
   -- * Type class Equal
   , Equal(..)
   )
@@ -58,7 +59,7 @@ instance Equal Lit where
   equalOr s pre x y =
     do addClause s (pre ++ [neg x, y])
        addClause s (pre ++ [x, neg y])
-    
+
   notEqualOr s pre x y =
     do equalOr s pre x (neg y)
 

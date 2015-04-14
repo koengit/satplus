@@ -1,4 +1,26 @@
-module SAT.Order where
+module SAT.Order(
+  -- * Functions
+    isGreaterThan
+  , isLessThan
+  , isGreaterThanEqual
+  , isLessThanEqual
+
+  -- * Constraints
+  , greaterThan
+  , lessThan
+  , greaterThanEqual
+  , lessThanEqual
+
+  , greaterThanOr
+  , lessThanOr
+  , greaterThanEqualOr
+  , lessThanEqualOr
+
+  -- * Type class
+  , Order(..)
+  , Compare(..)
+  )
+ where
 
 import SAT
 import SAT.Equal
@@ -9,23 +31,38 @@ import Control.Monad ( when )
 
 ------------------------------------------------------------------------------
 
-data Compare = LT | LEQ | GEQ | GT
- deriving ( Eq, Ord, Show, Read )
-
+-- | Type class for things that can be compared. New instances only need to
+-- define the 'compareTupleOr' function.
 class Order a where
+  -- | Add constraints to the Solver that state that the arguments have the
+  -- specified relationship, under the presence of a /disjunctive prefix/.
+  -- (See 'SAT.Util.unconditionally' for what /prefix/ means.)
   compareOr :: Solver -> [Lit] -> Compare -> a -> a -> IO ()
   compareOr s pre cmp x y = compareTupleOr s pre cmp (x,()) (y,())
 
+  -- | Create a literal that implies the specified relationship between
+  -- the arguments.
   newCompareLit :: Solver -> Compare -> a -> a -> IO Lit
   newCompareLit s cmp x y =
     do q <- newLit s
        compareOr s [neg q] cmp x y
        return q
 
+  -- | Add constraints to the Solver that state that the arguments have the
+  -- specified relationship, under the presence of a /disjunctive prefix/.
+  -- (See 'SAT.Util.unconditionally' for what /prefix/ means.) This function
+  -- is typically not going to be used directly by a user of this library;
+  -- use 'compareOr' instead.
   compareTupleOr :: Order b => Solver -> [Lit] -> Compare -> (a,b) -> (a,b) -> IO ()
+
+-- | A datatype for different kinds of comparisons.
+data Compare = LT | LEQ | GEQ | GT
+ deriving ( Eq, Ord, Show, Read )
 
 ------------------------------------------------------------------------------
 
+-- | Add constraints to the Solver that state that the arguments have the
+-- specified relationship.
 greaterThan, greaterThanEqual, lessThan, lessThanEqual ::
   Order a => Solver -> a -> a -> IO ()
 greaterThan      = unconditionally greaterThanOr
@@ -33,6 +70,9 @@ greaterThanEqual = unconditionally greaterThanEqualOr
 lessThan         = unconditionally lessThanOr
 lessThanEqual    = unconditionally lessThanEqualOr
 
+-- | Add constraints to the Solver that state that the arguments have the
+-- specified relationship, under the presence of a /disjunctive prefix/.
+-- (See 'SAT.Util.unconditionally' for what /prefix/ means.)
 greaterThanOr, greaterThanEqualOr, lessThanOr, lessThanEqualOr ::
   Order a => Solver -> [Lit] -> a -> a -> IO ()
 greaterThanOr      s pre x y = compareOr s pre GT  (x,()) (y,())
@@ -40,6 +80,8 @@ greaterThanEqualOr s pre x y = compareOr s pre GEQ (x,()) (y,())
 lessThanOr         s pre x y = compareOr s pre LT  (x,()) (y,())
 lessThanEqualOr    s pre x y = compareOr s pre LEQ (x,()) (y,())
 
+-- | Return a literal that indicates whether or not the arguments have
+-- the specified relationship.
 isGreaterThan, isGreaterThanEqual, isLessThan, isLessThanEqual ::
   Order a => Solver -> a -> a -> IO Lit
 isGreaterThan      s x y = isLessThan s y x
