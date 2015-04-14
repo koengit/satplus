@@ -3,6 +3,8 @@ module SAT.Test where
 
 import SAT
 import SAT.Bool
+import qualified SAT.Unary as U
+import SAT.Optimize
 
 import Test.QuickCheck
 import Test.QuickCheck.Modifiers
@@ -67,6 +69,118 @@ prop_parityOr pre xs p =
        b <- run $ solve s []
        monitor (whenFail (putStrLn ("parityOr " ++ show (map bol pre) ++ " " ++ show (map bol xs) ++ " " ++ show p ++ " -> " ++ show b)))
        assert (or (map bol pre) || b == (p == odd (length (filter id (map bol xs)))))
+
+------------------------------------------------------------------------------
+
+prop_unaryLeq (NonNegative m) (NonNegative k) =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       b <- run $ solve s []
+       assert b
+       n <- run $ U.modelValue s u
+       a <- run $ modelValue s (u U..<= k)
+       assert (a == (n <= k))
+
+prop_unaryLt (NonNegative m) (NonNegative k) =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       b <- run $ solve s []
+       assert b
+       n <- run $ U.modelValue s u
+       a <- run $ modelValue s (u U..< k)
+       assert (a == (n < k))
+
+prop_unaryGeq (NonNegative m) (NonNegative k) =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       b <- run $ solve s []
+       assert b
+       n <- run $ U.modelValue s u
+       a <- run $ modelValue s (u U..>= k)
+       assert (a == (n >= k))
+
+prop_unaryGt (NonNegative m) (NonNegative k) =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       b <- run $ solve s []
+       assert b
+       n <- run $ U.modelValue s u
+       a <- run $ modelValue s (u U..> k)
+       assert (a == (n > k))
+
+prop_unary_add (NonNegative m1) (NonNegative m2) =
+  satfun $ \s lit bol ->
+    do u1 <- run $ U.newUnary s m1
+       u2 <- run $ U.newUnary s m2
+       k1 <- pick (choose (0,m1))
+       k2 <- pick (choose (0,m2))
+       u3 <- run $ U.add s u1 u2
+       b <- run $ solve s [u1 U..>= k1, u2 U..>= k2]
+       assert b
+       n1 <- run $ U.modelValue s u1
+       n2 <- run $ U.modelValue s u2
+       n3 <- run $ U.modelValue s u3
+       assert (n3 == n1+n2)
+
+prop_unary_count xs =
+  satfun $ \s lit bol ->
+    do u <- run $ U.count s (map lit xs)
+       b <- run $ solve s []
+       assert b
+       n  <- run $ U.modelValue s u
+       bs <- run $ sequence [ modelValue s (lit x) | x <- xs ]
+       assert (length (filter id bs) == n)
+
+prop_unary_div (NonNegative m) (Positive k) =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       i <- pick (choose (0,m))
+       b <- run $ solve s [u U..>= i]
+       assert b
+       n  <- run $ U.modelValue s u
+       nk <- run $ U.modelValue s (u U.// k)
+       assert (nk == (n `div` k))
+
+prop_unary_mod (NonNegative m) (Positive k) =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       i <- pick (choose (0,m))
+       uk <- run $ U.modulo s u k
+       b <- run $ solve s [u U..>= i]
+       assert b
+       n  <- run $ U.modelValue s u
+       nk <- run $ U.modelValue s uk
+       assert (nk == (n `mod` k))
+
+------------------------------------------------------------------------------
+
+prop_minimize (NonNegative m) as =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       i <- pick (choose (0,m))
+       run $ addClause s [u U..>= i]
+       b <- run $ solveMinimize s (map lit as) u
+       assert (b == (False `notElem` map bol as))
+       if b then
+         do n <- run $ U.modelValue s u
+            monitor (whenFail $ putStrLn ("n=" ++ show n ++ ", i=" ++ show i))
+            assert (n == i)
+        else
+         do monitor (whenFail $ putStrLn ("b=" ++ show b ++ ", as=" ++ show (map bol as)))
+
+prop_maximize (NonNegative m) as =
+  satfun $ \s lit bol ->
+    do u <- run $ U.newUnary s m
+       i <- pick (choose (0,m))
+       run $ addClause s [u U..<= i]
+       b <- run $ solveMaximize s (map lit as) u
+       assert (b == (False `notElem` map bol as))
+       if b then
+         do n <- run $ U.modelValue s u
+            monitor (whenFail $ putStrLn ("n=" ++ show n ++ ", i=" ++ show i))
+            assert (n == i)
+        else
+         do monitor (whenFail $ putStrLn ("b=" ++ show b ++ ", as=" ++ show (map bol as)))
 
 ------------------------------------------------------------------------------
 
