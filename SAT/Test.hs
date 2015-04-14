@@ -13,6 +13,25 @@ import Test.QuickCheck.All
 
 ------------------------------------------------------------------------------
 
+prop_conflict c1 c2 c3 xs =
+  monadicIO $
+    do s  <- run $ newSolver
+       ps <- run $ sequence [ newLit s | i <- [1..100] ]
+       let lit (LIT x) = if x > 0 then p else neg p
+            where
+             p = (true : ps) !! (abs x - 1)
+
+       run $ addClause s (map lit c1)
+       run $ addClause s (map lit c2)
+       run $ addClause s (map lit c3)
+       b <- run $ solve s (map lit xs)
+       monitor (not b ==>)
+       ys <- run $ conflict s
+       monitor (whenFail (putStrLn ("ys=" ++ show ys)))
+       assert (all (`elem` map lit xs) (map neg ys))
+
+------------------------------------------------------------------------------
+
 prop_andl xs =
   satfun $ \s lit bol ->
     do y <- run $ andl s (map lit xs)
