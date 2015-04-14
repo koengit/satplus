@@ -132,18 +132,25 @@ addClause (Solver s _) xs
 solve :: Solver -> [Lit] -> IO Bool
 solve (Solver s ref) xs
   | false `elem` xs =
-    do writeIORef ref (Just false)
+    do writeIORef ref (Just true)
        return False
-  
+
   | otherwise =
     do writeIORef ref Nothing
        M.solve s [ x | Lit x <- xs ]
 
--- | If the last call to 'solve' returned False, return the subset of the
--- assumptions given to 'solve' that actually lead to a contradiction. For
--- example, if the returned list is empty, there is a contradiction even
+-- | If the last call to 'solve' returned False: Return the conflict clause
+-- that was the reason for the fact that no model was found under the
+-- specified assumptions. The conflict clause only contains literals that
+-- are negations of the assumptions given to 'solve'. The conflict
+-- clause is always logically implied by the current set of clauses.
+--
+-- For example, if the returned clause is empty, there is a contradiction even
 -- without any assumptions.
--- There are no guarantees about minimality of the subset.
+--
+-- This function can be used to implement so-called \'unsatisfiable cores\'.
+--
+-- There are no guarantees about minimality of the returned clause.
 -- (/Only use when 'solve' has previously returned False!/)
 conflict :: Solver -> IO [Lit]
 conflict (Solver s ref) =
