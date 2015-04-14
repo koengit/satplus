@@ -40,7 +40,7 @@ module SAT(
 
   -- * Clauses
   , addClause
-  
+
   -- * Solving
   , solve
   , modelValue
@@ -179,7 +179,7 @@ modelValueMaybe (Solver s _) (Lit x) =
 -- Implied constants
 
 -- | Check whether or not a given literal has received a top-level value
--- in the given Solver. This can happen when the literal is implied to be 
+-- in the given Solver. This can happen when the literal is implied to be
 -- False or True by the current set of clauses. There are no guarantees about
 -- when this actually happens.
 valueMaybe :: Solver -> Lit -> IO (Maybe Bool)
