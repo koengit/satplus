@@ -89,12 +89,13 @@ solveOptimize s ass obj callback =
        let opti minTry minReached | minReached > minTry =
              do cont <- callback (minTry,minReached)
                 if cont then
-                  do b <- solve s ((obj .<= k) : ass)
+                  do b <- solve s ([ obj .<= i | i <- [minReached-1,minReached-2..k] ] ++ ass)
                      if b then
                        do n <- U.modelValue s obj
                           opti minTry n
                       else
-                       do opti (k+1) minReached
+                       do ass' <- conflict s
+                          opti (maximum ([i+1 | i <- [k..minReached-1], neg (obj .<= i) `elem` ass'] ++ [k+1])) minReached
                  else
                   -- callback says: give up
                   do return Nothing
