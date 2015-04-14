@@ -54,7 +54,7 @@ zero = Unary 0 []
 digit :: Lit -> Unary
 digit x = Unary 1 [x]
 
--- | Inverts a unary number; computes /maxValue n - n/. Can b used to maximize
+-- | Inverts a unary number; computes /maxValue n - n/. Can be used to maximize
 -- instead of minimize.
 invert :: Unary -> Unary
 invert (Unary n xs) = Unary n (reverse (map neg xs))
