@@ -14,7 +14,7 @@ import System.IO( hFlush, stdout )
 -- add a clause with @obj .<= k@ afterwards.
 solveMinimize :: Solver -> [Lit] -> Unary -> IO Bool
 solveMinimize s ass obj =
-  fromJust `fmap` solveOptimize s ass obj (\_ _ -> return True)
+  fromJust `fmap` solveOptimize s ass obj (\_ -> return True)
 
 -- | Like 'solve', but finds the maximum solution, where the objective is a
 -- specified unary number. This function does not /commit/ to a minimal
@@ -22,7 +22,7 @@ solveMinimize s ass obj =
 -- clause with @obj .>= k@ afterwards.
 solveMaximize :: Solver -> [Lit] -> Unary -> IO Bool
 solveMaximize s ass obj =
-  fromJust `fmap` solveOptimize s ass (invert obj) (\_ _ -> return True)
+  fromJust `fmap` solveOptimize s ass (invert obj) (\_ -> return True)
 
 ------------------------------------------------------------------------------
 -- * Verbose optimization
@@ -45,10 +45,10 @@ solveMaximizeVerbose s ass obj v =
   fromJust `fmap` solveOptimize s ass (invert obj) (printOpti' v)
  where
   m = maxValue obj
-  printOpti' v x y = printOpti v (m-y) (m-x)
+  printOpti' v (x,y) = printOpti v (m-y,m-x)
 
-printOpti :: Verbosity -> Int -> Int -> IO Bool
-printOpti v x y =
+printOpti :: Verbosity -> (Int,Int) -> IO Bool
+printOpti v (x,y) =
   do case v of
        None    -> do return ()
        Line    -> do putStrLn s
@@ -71,23 +71,23 @@ printOpti v x y =
 -- the result of 'solveOptimize' will be Nothing. It is still possible to
 -- read off the best solution found using functions such as 'modelValue'.
 --
--- The optimization performs a binary search. The callback function gets two
--- arguments: @minTry@ and @minReached@, which are the values of the best
--- value still considered possible (@minTry@) and the best found value
--- (@minReached@), respectively.
+-- The optimization performs a binary search. The callback function gets the
+-- current optimization interval @(minTry,minReached)@ as argument;
+-- which are the values of the best value still considered possible
+-- (@minTry@) and the best value found so far (@minReached@), respectively.
 --
 -- This function minimizes. For maximization, use the function 'invert' on
 -- the objective first.
 solveOptimize :: Solver -> [Lit] {- ^ assumptions -}
                         -> Unary {- ^ objective (for minimization) -}
-                        -> (Int -> Int -> IO Bool) {- ^ callback -}
+                        -> ((Int,Int) -> IO Bool) {- ^ callback -}
                         -> IO (Maybe Bool)
 solveOptimize s ass obj callback =
   do b <- solve s ass
      if b then
        -- there is a solution; let's optimize!
        let opti minTry minReached | minReached > minTry =
-             do cont <- callback minTry minReached
+             do cont <- callback (minTry,minReached)
                 if cont then
                   do b <- solve s ((obj .<= k) : ass)
                      if b then
