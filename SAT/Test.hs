@@ -86,11 +86,11 @@ satfun h =
        let lit (LIT x) = if x > 0 then p else neg p
             where
              p = (true : ps) !! (abs x - 1)
-       
+
            bol (LIT x) = if x > 0 then p else not p
             where
              p = (True : bs) !! (abs x - 1)
-       
+
        h s lit bol
 
 data LIT = LIT Int
@@ -106,7 +106,7 @@ instance Arbitrary LIT where
     LIT `fmap`
       sized (\s -> let n = 1+(s`div` 8) in
               choose (-n, n) `suchThat` (/=0))
-  
+
   shrink (LIT x) =
     [ LIT (-1) | x /= (-1) ] ++
     [ LIT 1    | abs x /= 1 ]

@@ -27,7 +27,7 @@ andl s xs
   xs'       = usort xs
   (xs0,xs1) = partition pos xs'
   xAndNegX  = xs0 `overlap` sort (map neg xs1)
-  
+
   []     `overlap` _      = False
   _      `overlap` []     = False
   (x:xs) `overlap` (y:ys) =
@@ -57,7 +57,7 @@ xorl s xs =
   xs'       = filter (/= false) (sort xs)
   (xs0,xs1) = partition pos (filter (/= true) xs')
   (p,xs'')  = go (odd (length (filter (== true) xs'))) [] xs0 (sort (map neg xs1))
-  
+
   go p ys []        []        = (p, ys)
   go p ys (x:y:xs0) xs1       | x == y = go p ys xs0 xs1
   go p ys xs0       (x:y:xs1) | x == y = go p ys xs0 xs1
@@ -137,7 +137,7 @@ parityOr s pre xs p = go pre (length xs) xs p
   go pre n (x:xs) p | n <= 5 =
     do go (neg x : pre) (n-1) xs (not p)
        go (x     : pre) (n-1) xs p
-  
+
   go pre n xs p =
     do x <- newLit s
        go pre (k+1) (x : take k xs) p

@@ -5,7 +5,7 @@ module SAT.Unary(
   , zero
   , digit
   , maxValue
-  
+
   -- * Comparison against constants
   , (.<=), (.<), (.>), (.>=)
 
@@ -18,7 +18,7 @@ module SAT.Unary(
   , invert
   , (//)
   , modulo
-  
+
   -- * Models
   , modelValue
   )
@@ -117,44 +117,44 @@ count s xs = addList s (map digit xs)
 -- | Adds up two unary numbers.
 add :: Solver -> Unary -> Unary -> IO Unary
 add s (Unary n xs) (Unary m ys) =
-  do zs <- merge xs ys
+  do zs <- merge s xs ys
      return (Unary (n+m) zs)
- where
-  merge []  ys  = return ys
-  merge xs  []  = return xs
-  merge [x] [y] = merge2 x y
-  merge xs  ys  =
-    do zs0 <- merge xs0 ys0
-       zs1 <- merge xs1 ys1
-       let zs = zs0 `ilv` zs1
-       zss <- sequence [ merge2 v w | (v,w) <- pairs (tail zs) ]
-       return (take (a+b) ([head zs] ++ concat zss ++ [last zs]))
-   where
-    a   = length xs
-    b   = length ys
-    n'  = a `max` b
-    n   = if even n' then n' else n'+1
-    xs' = xs ++ replicate (n-a) false
-    ys' = ys ++ replicate (n-b) false
-    xs0 = evens xs'
-    xs1 = odds  xs'
-    ys0 = evens ys'
-    ys1 = odds  ys'
 
-  merge2 x y =
-    do a <- andl s [x,y]
-       b <- orl s [x,y]
-       return [b,a]
+merge :: Solver -> [Lit] -> [Lit] -> IO [Lit]
+merge s []  ys  = return ys
+merge s xs  []  = return xs
+merge s [x] [y] =
+  do a <- andl s [x,y]
+     b <- orl s [x,y]
+     return [b,a]
+
+merge s xs  ys  =
+  do zs0 <- merge s xs0 ys0
+     zs1 <- merge s xs1 ys1
+     let zs = zs0 `ilv` zs1
+     zss <- sequence [ merge s [v] [w] | (v,w) <- pairs (tail zs) ]
+     return (take (a+b) ([head zs] ++ concat zss ++ [last zs]))
+ where
+  a   = length xs
+  b   = length ys
+  n'  = a `max` b
+  n   = if even n' then n' else n'+1
+  xs' = xs ++ replicate (n-a) false
+  ys' = ys ++ replicate (n-b) false
+  xs0 = evens xs'
+  xs1 = odds  xs'
+  ys0 = evens ys'
+  ys1 = odds  ys'
 
   evens (x:xs) = x : odds xs
   evens []     = []
-  
+
   odds (x:xs) = evens xs
   odds []     = []
-  
+
   pairs (x:y:xs) = (x,y) : pairs xs
   pairs _        = []
-  
+
   (x:xs) `ilv` ys = x : (ys `ilv` xs)
   []     `ilv` ys = ys
 
@@ -172,10 +172,10 @@ addList s us = go (sort us)
  where
   go [] =
     do return zero
-  
+
   go [u] =
     do return u
-  
+
   go (u1:u2:us) =
     do u <- add s u1 u2
        go (insert u us)
