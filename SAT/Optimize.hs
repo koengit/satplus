@@ -99,7 +99,7 @@ solveOptimize s ass obj callback =
                   -- callback says: give up
                   do return Nothing
             where
-             k = (minTry+minReached) `div` 2          
+             k = (minTry+minReached) `div` 2
 
            opti _ _ =
              -- optimum reached
@@ -111,4 +111,4 @@ solveOptimize s ass obj callback =
       else
        -- no solution
        do return (Just False)
-     
+
