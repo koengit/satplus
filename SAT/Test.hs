@@ -4,6 +4,7 @@ module SAT.Test where
 import SAT
 import SAT.Bool
 import qualified SAT.Unary as U
+import qualified SAT.Val   as V
 import SAT.Optimize
 import SAT.Equal
 import SAT.Order
@@ -11,6 +12,7 @@ import SAT.Order
 import Test.QuickCheck
 import Test.QuickCheck.Modifiers
 import Test.QuickCheck.Monadic
+import Test.QuickCheck.Poly
 import Test.QuickCheck.All
 
 ------------------------------------------------------------------------------
@@ -239,6 +241,28 @@ prop_isEqualPair x1 x2 y1 y2 =
 
 ------------------------------------------------------------------------------
 
+prop_isLessThanEqual x y =
+  satfun $ \s lit bol ->
+    do z <- run $ isLessThanEqual s (lit x) (lit y)
+       b <- run $ solve s []
+       assert b
+       a <- run $ modelValue s (lit x)
+       b <- run $ modelValue s (lit y)
+       c <- run $ modelValue s z
+       assert (c == (a <= b))
+
+prop_isLessThanEqualPair x1 x2 y1 y2 =
+  satfun $ \s lit bol ->
+    do z <- run $ isLessThanEqual s (lit x1, lit x2) (lit y1, lit y2)
+       b <- run $ solve s []
+       assert b
+       a1 <- run $ modelValue s (lit x1)
+       a2 <- run $ modelValue s (lit x2)
+       b1 <- run $ modelValue s (lit y1)
+       b2 <- run $ modelValue s (lit y2)
+       c <- run $ modelValue s z
+       assert (c == ((a1,a2) <= (b1,b2)))
+
 prop_compareLit pre cmp x y =
   satfun $ \s lit bol ->
     do run $ lessOr s (map lit pre) cmp (lit x) (lit y)
@@ -274,6 +298,78 @@ prop_compareList pre cmp xs ys =
    where
     comp = head [ op | (cmp',op) <- cmps, cmp' == cmp ]
     cmps = [(False,(<)),(True,(<=))]
+
+------------------------------------------------------------------------------
+
+prop_compareUnary pre incl (NonNegative m) (NonNegative n) =
+  satfun $ \s lit bol ->
+    do u1 <- run $ U.newUnary s m
+       u2 <- run $ U.newUnary s n
+       run $ lessOr s (map lit pre) incl u1 u2
+       i1 <- pick (choose (0,m))
+       i2 <- pick (choose (0,n))
+       b <- run $ solve s [u1 U..>= i1, u2 U..<= i2]
+       assert (b == (or (map bol pre) || (if incl then i1 <= i2 else i1 < i2)))
+       if b then
+         do a1 <- run $ U.modelValue s u1
+            a2 <- run $ U.modelValue s u2
+            assert (or (map bol pre) || (if incl then a1 <= a2 else a1 < a2))
+        else
+         do return ()
+
+prop_compareUnaryPair pre incl (NonNegative m) x (NonNegative n) y =
+  satfun $ \s lit bol ->
+    do u1 <- run $ U.newUnary s m
+       u2 <- run $ U.newUnary s n
+       run $ lessOr s (map lit pre) incl (u1,lit x) (u2, lit y)
+       i1 <- pick (choose (0,m))
+       i2 <- pick (choose (0,n))
+       b <- run $ solve s [u1 U..>= i1, u2 U..<= i2]
+       monitor (whenFail (putStrLn ("solve=" ++ show b)))
+       monitor (whenFail (putStrLn (show (i1,bol x) ++ " <= " ++ show (i2,bol y))))
+       assert (b == (or (map bol pre) || (if incl then (i1,bol x) <= (i2, bol y) else (i1, bol x) < (i2, bol y))))
+       if b then
+         do a1 <- run $ U.modelValue s u1
+            a2 <- run $ U.modelValue s u2
+            monitor (whenFail (print (a1,a2)))
+            assert (or (map bol pre) || (if incl then (a1,bol x) <= (a2, bol y) else (a1, bol x) < (a2, bol y)))
+        else
+         do return ()
+
+------------------------------------------------------------------------------
+
+prop_equalVal pre (NonEmpty xs) (NonEmpty ys) =
+  satfun $ \s lit bol ->
+    do v1 <- run $ V.newVal s (xs :: [OrdA])
+       v2 <- run $ V.newVal s ys
+       run $ equalOr s (map lit pre) v1 v2
+       x <- pick (elements xs)
+       y <- pick (elements ys)
+       b <- run $ solve s [v1 V..= x, v2 V..= y]
+       monitor (whenFail (putStrLn ("solve=" ++ show b)))
+       assert (b == (or (map bol pre) || x == y))
+
+prop_notEqualVal pre (NonEmpty xs) (NonEmpty ys) =
+  satfun $ \s lit bol ->
+    do v1 <- run $ V.newVal s (xs :: [OrdA])
+       v2 <- run $ V.newVal s ys
+       run $ notEqualOr s (map lit pre) v1 v2
+       x <- pick (elements xs)
+       y <- pick (elements ys)
+       b <- run $ solve s [v1 V..= x, v2 V..= y]
+       monitor (whenFail (putStrLn ("solve=" ++ show b)))
+       assert (b == (or (map bol pre) || x /= y))
+
+prop_compareVal pre incl (NonEmpty xs) (NonEmpty ys) =
+  satfun $ \s lit bol ->
+    do v1 <- run $ V.newVal s (xs :: [OrdA])
+       v2 <- run $ V.newVal s ys
+       run $ lessOr s (map lit pre) incl v1 v2
+       x <- pick (elements xs)
+       y <- pick (elements ys)
+       b <- run $ solve s [v1 V..= x, v2 V..= y]
+       monitor (whenFail (putStrLn ("solve=" ++ show b)))
+       assert (b == (or (map bol pre) || (if incl then x <= y else x < y)))
 
 ------------------------------------------------------------------------------
 
