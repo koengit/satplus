@@ -18,8 +18,8 @@ solveMinimize s ass obj =
 
 -- | Like 'solve', but finds the maximum solution, where the objective is a
 -- specified unary number. This function does not /commit/ to a
--- solution. If this is the desired behavior, the user should manually add a
--- clause with @obj .>= k@ afterwards.
+-- solution. If committing is the desired behavior, the user should manually
+-- add a clause with @obj .>= k@ afterwards.
 solveMaximize :: Solver -> [Lit] -> Unary -> IO Bool
 solveMaximize s ass obj =
   fromJust `fmap` solveOptimize s ass (invert obj) (\_ -> return True)
