@@ -16,6 +16,8 @@ module SAT.Unary(
 
   -- * Operations
   , invert
+  , succ
+  , pred
   , (//)
   , modulo
 
@@ -28,7 +30,10 @@ import SAT hiding ( modelValue )
 import qualified SAT
 import SAT.Bool
 import SAT.Equal
+import SAT.Order
 import Data.List( sort, insert, transpose )
+
+import Prelude hiding ( Enum(succ,pred) )
 
 ------------------------------------------------------------------------------
 
@@ -49,6 +54,14 @@ newUnary s n =
 -- | Creates 0 as a unary number.
 zero :: Unary
 zero = Unary 0 []
+
+-- | Successor.
+succ :: Unary -> Unary
+succ (Unary n xs) = Unary (n+1) (true : xs)
+
+-- | Predecessor (but 0 goes to 0).
+pred :: Unary -> Unary
+pred (Unary n xs) = Unary (n+1) (true : xs)
 
 -- | Creates a 1-digit unary number, specified by the given literal.
 digit :: Lit -> Unary
@@ -191,3 +204,36 @@ modelValue s (Unary _ xs) = go xs
                    (+1) `fmap` go xs
                   else
                    return 0
+
+------------------------------------------------------------------------------
+
+instance Equal Unary where
+  equalOr s pre u1 u2 =
+    -- this generates precisely all bi-implications
+    do lessThanEqualOr s pre u1 u2
+       lessThanEqualOr s pre u2 u1
+
+  notEqualOr s pre u1 u2 =
+    -- this only needs one helper variable
+    do q <- newLit s
+       lessThanOr s (q    :pre) u1 u2
+       lessThanOr s (neg q:pre) u2 u1
+
+instance Order Unary where
+  lessOr s pre False u v =
+    do lessOr s pre True (succ u) v
+
+  lessOr s pre True (Unary _ xs) (Unary _ ys) = leq xs ys
+   where
+    leq [] _ =
+      do return ()
+
+    leq (x:xs) [] =
+      do addClause s (neg x : pre)
+         -- do not need to recurse here
+
+    leq (x:xs) (y:ys) =
+      do addClause s (neg x : y : pre)
+         leq xs ys
+
+------------------------------------------------------------------------------
