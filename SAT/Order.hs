@@ -30,8 +30,16 @@ import Control.Monad ( when )
 
 ------------------------------------------------------------------------------
 
--- | Type class for things that can be compared. New instances only need to
--- define the 'compareTupleOr' function.
+-- | Type class for things that can be compared.
+--
+-- New instances only need to define the 'lessTupleOr' function. However, if
+-- there is no natural way to implement lexicographic ordering with the
+-- instance type, it is possible to only define 'lessOr', in which case
+-- the default definition of 'lessTupleOr' is less efficient.
+--
+-- For types where it is easy to see statically if the answer is going to
+-- be True or False, a special definition of 'newLessLit' can be made. For
+-- most types, the default definition should be enough.
 class Order a where
   -- | Add constraints to the Solver that state that the first argument is
   -- less than the second, under the presence of a /disjunctive prefix/.
@@ -57,6 +65,13 @@ class Order a where
   -- is typically not going to be used directly by a user of this library;
   -- use 'compareOr' instead.
   lessTupleOr :: Order b => Solver -> [Lit] -> Bool -> (a,b) -> (a,b) -> IO ()
+  lessTupleOr s pre incl (x,p) (y,q) =
+    do w <- newLessLit s incl p q
+       if w == false || w == true then
+         do lessOr s pre (w == true) x y
+        else
+         do lessOr s pre     True  x y  -- x <= y
+            lessOr s (w:pre) False x y  -- x < y | p <~ q
 
 ------------------------------------------------------------------------------
 
