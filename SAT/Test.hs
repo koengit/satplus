@@ -8,8 +8,6 @@ import SAT.Optimize
 import SAT.Equal
 import SAT.Order
 
-import Prelude hiding ( Ordering(..) )
-
 import Test.QuickCheck
 import Test.QuickCheck.Modifiers
 import Test.QuickCheck.Monadic
@@ -243,39 +241,39 @@ prop_isEqualPair x1 x2 y1 y2 =
 
 prop_compareLit pre cmp x y =
   satfun $ \s lit bol ->
-    do run $ compareOr s (map lit pre) cmp (lit x) (lit y)
+    do run $ lessOr s (map lit pre) cmp (lit x) (lit y)
        b <- run $ solve s []
        assert (b == (or (map bol pre) || bol x `comp` bol y))
    where
     comp = head [ op | (cmp',op) <- cmps, cmp' == cmp ]
-    cmps = [(LT,(<)),(GT,(>)),(LEQ,(<=)),(GEQ,(>=))]
+    cmps = [(False,(<)),(True,(<=))]
 
 prop_compareBool pre cmp x y =
   satfun $ \s lit bol ->
-    do run $ compareOr s (map lit pre) cmp (bool x) (bool y)
+    do run $ lessOr s (map lit pre) cmp (bool x) (bool y)
        b <- run $ solve s []
        assert (b == (or (map bol pre) || x `comp` y))
    where
     comp = head [ op | (cmp',op) <- cmps, cmp' == cmp ]
-    cmps = [(LT,(<)),(GT,(>)),(LEQ,(<=)),(GEQ,(>=))]
+    cmps = [(False,(<)),(True,(<=))]
 
 prop_comparePair pre cmp x1 x2 y1 y2 =
   satfun $ \s lit bol ->
-    do run $ compareOr s (map lit pre) cmp (lit x1, lit x2) (lit y1, lit y2)
+    do run $ lessOr s (map lit pre) cmp (lit x1, lit x2) (lit y1, lit y2)
        b <- run $ solve s []
        assert (b == (or (map bol pre) || (bol x1, bol x2) `comp` (bol y1, bol y2)))
    where
     comp = head [ op | (cmp',op) <- cmps, cmp' == cmp ]
-    cmps = [(LT,(<)),(GT,(>)),(LEQ,(<=)),(GEQ,(>=))]
+    cmps = [(False,(<)),(True,(<=))]
 
 prop_compareList pre cmp xs ys =
   satfun $ \s lit bol ->
-    do run $ compareOr s (map lit pre) cmp (map lit xs) (map lit ys)
+    do run $ lessOr s (map lit pre) cmp (map lit xs) (map lit ys)
        b <- run $ solve s []
        assert (b == (or (map bol pre) || map bol xs `comp` map bol ys))
    where
     comp = head [ op | (cmp',op) <- cmps, cmp' == cmp ]
-    cmps = [(LT,(<)),(GT,(>)),(LEQ,(<=)),(GEQ,(>=))]
+    cmps = [(False,(<)),(True,(<=))]
 
 ------------------------------------------------------------------------------
 
@@ -309,9 +307,6 @@ instance Show LIT where
   show (LIT 1)    = "TRUE"
   show (LIT (-1)) = "FALSE"
   show (LIT x)    = show x
-
-instance Arbitrary Compare where
-  arbitrary = elements [LT,LEQ,GT,GEQ]
 
 instance Arbitrary LIT where
   arbitrary =
