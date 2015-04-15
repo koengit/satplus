@@ -3,7 +3,7 @@ module SAT.Val(
     Val
   , newVal
   , val
-  
+
   -- * Inspection
   , (.=)
   , domain
