@@ -301,6 +301,39 @@ prop_compareList pre cmp xs ys =
 
 ------------------------------------------------------------------------------
 
+prop_equalUnary pre (NonNegative m) (NonNegative n) =
+  satfun $ \s lit bol ->
+    do u1 <- run $ U.newUnary s m
+       u2 <- run $ U.newUnary s n
+       run $ equalOr s (map lit pre) u1 u2
+       i1 <- pick (choose (0,m))
+       i2 <- pick (choose (0,n))
+       b <- run $ solve s [u1 U..>= i1, u2 U..<= i2]
+       assert (b == (or (map bol pre) || i1 <= i2))
+       if b then
+         do a1 <- run $ U.modelValue s u1
+            a2 <- run $ U.modelValue s u2
+            assert (or (map bol pre) || a1 == a2)
+        else
+         do return ()
+
+prop_notEqualUnary pre (NonNegative m) (NonNegative n) =
+  satfun $ \s lit bol ->
+    do u1 <- run $ U.newUnary s m
+       u2 <- run $ U.newUnary s n
+       run $ notEqualOr s (map lit pre) u1 u2
+       i1 <- pick (choose (0,m))
+       i2 <- pick (choose (0,n))
+       b <- run $ solve s [u1 U..>= i1, u2 U..<= i2]
+       monitor (whenFail (putStrLn ("solve=" ++ show b)))
+       assert (b == (or (map bol pre) || (i1 /= i2 || i1 /= m || i2 /= 0)))
+       if b then
+         do a1 <- run $ U.modelValue s u1
+            a2 <- run $ U.modelValue s u2
+            assert (or (map bol pre) || a1 /= a2)
+        else
+         do return ()
+
 prop_compareUnary pre incl (NonNegative m) (NonNegative n) =
   satfun $ \s lit bol ->
     do u1 <- run $ U.newUnary s m
