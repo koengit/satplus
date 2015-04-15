@@ -91,19 +91,20 @@ greaterThanOr, greaterThanEqualOr, lessThanOr, lessThanEqualOr ::
   Order a => Solver -> [Lit] -> a -> a -> IO ()
 greaterThanOr      s pre x y = lessThanOr      s pre y x
 greaterThanEqualOr s pre x y = lessThanEqualOr s pre y x
-lessThanOr         s pre x y = lessOr s pre False (x,()) (y,())
-lessThanEqualOr    s pre x y = lessOr s pre True  (x,()) (y,())
+lessThanOr         s pre x y = lessOr s pre False x y
+lessThanEqualOr    s pre x y = lessOr s pre True  x y
 
 -- | Return a literal that indicates whether or not the arguments have
 -- the specified relationship.
 isGreaterThan, isGreaterThanEqual, isLessThan, isLessThanEqual ::
   Order a => Solver -> a -> a -> IO Lit
-isGreaterThan      s x y = isLessThan s y x
+isGreaterThan      s x y = isLessThan      s y x
 isGreaterThanEqual s x y = isLessThanEqual s y x
 isLessThan         s x y = neg `fmap` isGreaterThanEqual s x y
 isLessThanEqual    s x y =
   do q <- newLessLit s True x y
-     greaterThanOr s [q] x y
+     when (q /= false && q /= true) $
+       greaterThanOr s [q] x y
      return q
 
 ------------------------------------------------------------------------------
