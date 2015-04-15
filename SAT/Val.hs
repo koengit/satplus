@@ -18,6 +18,10 @@ import SAT hiding ( modelValue )
 import SAT.Util( usort )
 import SAT.Bool( atMostOne )
 import SAT.Equal
+import SAT.Order
+
+import Data.List( tails )
+import Control.Monad( when )
 
 ------------------------------------------------------------------------------
 
@@ -80,6 +84,41 @@ instance Ord a => Equal (Val a) where
         _                   -> return ()
     | pqx <- stitch p q
     ]
+
+instance Ord a => Order (Val a) where
+  lessTupleOr s pre incl (x,p) (y,q) =
+    do w <- newLessLit s incl p q
+       when (w /= true) $
+         notEqualOr s (w:pre) x y
+       sandwich false true n xys
+   where
+    xys = [ (lit a,lit b) | (a,b,_) <- stitch x y ]
+    n   = length xys
+
+    lit Nothing  = false
+    lit (Just x) = x
+
+    sandwich lft rgt _ [] =
+      do return ()
+
+    sandwich lft rgt n xys | n <= 2 =
+      do sequence_ [ addClause s (neg lft : neg x : pre) | (x,_) <- xys ]
+         sequence_ [ addClause s (rgt     : neg y : pre) | (_,y) <- xys ]
+         sequence_ [ addClause s (neg y   : neg x : pre)
+                   | (_,y):xys' <- tails xys
+                   , (x,_) <- xys'
+                   ]
+
+    sandwich lft rgt n xys =
+      do lft' <- newLit s
+         rgt' <- newLit s
+         addClause s [neg lft,  lft']
+         addClause s [neg rgt', lft']
+         addClause s [neg rgt', rgt]
+         sandwich lft  rgt' k     (take k xys)
+         sandwich lft' rgt  (n-k) (drop k xys)
+     where
+      k = n `div` 2
 
 stitch :: Ord a => Val a -> Val a -> [(Maybe Lit, Maybe Lit, a)]
 stitch (Val pxs) (Val qys) = go pxs qys
