@@ -55,6 +55,11 @@ instance Equal () where
   notEqualOr s pre _ _ = addClause s pre
   isEqual    _     _ _ = return true
 
+instance Equal Bool where
+  equalOr    s pre x y = if x == y then return () else addClause s pre
+  notEqualOr s pre x y = if x /= y then return () else addClause s pre
+  isEqual    _     x y = return (bool (x==y))
+
 instance Equal Lit where
   equalOr s pre x y =
     do addClause s (pre ++ [neg x, y])
