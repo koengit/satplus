@@ -141,6 +141,17 @@ instance Order Lit where
          addClause s ([neg x, w] ++ pre)
          addClause s ([neg x, y] ++ pre)
 
+  newLessLit s incl x y
+    | x == y     = return (bool incl)
+    | x == neg y = return y
+    | x == false = return (if incl then true  else y)
+    | x == true  = return (if incl then y     else false)
+    | y == false = return (if incl then neg x else false)
+    | y == true  = return (if incl then true  else neg x)
+    | otherwise  = do q <- newLit s
+                      lessOr s [neg q] incl x y
+                      return q
+
 instance (Order a, Order b) => Order (a,b) where
   lessOr s pre incl t1 t2 =
     lessTupleOr s pre incl t1 t2
