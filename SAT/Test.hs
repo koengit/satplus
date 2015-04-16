@@ -431,13 +431,16 @@ satfun h =
 
        let lit (LIT x) = if x > 0 then p else neg p
             where
-             p = (true : ps) !! (abs x - 1)
+             p = (true : ps) ?? ("lit",abs x - 1)
 
            bol (LIT x) = if x > 0 then p else not p
             where
-             p = (True : bs) !! (abs x - 1)
+             p = (True : bs) ?? ("bol",abs x - 1)
 
        h s lit bol
+
+xs ?? (s,i) | i >= 0 && i < length xs = xs !! i
+            | otherwise               = error ("index: " ++ s ++ " = " ++ show i)
 
 data LIT = LIT Int
  deriving ( Eq, Ord )
