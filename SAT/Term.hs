@@ -21,13 +21,13 @@ import Data.List( sortBy, groupBy )
 ------------------------------------------------------------------------------
 
 -- | A type to represent sums of products of literals.
-data Term = Term{ toList :: [(Integer,Lit)] }
+data Term = Term{ toList :: [(Integer,Lit)] -- ^ Look inside a term. }
 
 -- | Create a constant term.
 number :: Integer -> Term
 number n = Term [(n,true)]
 
--- | Add two terms.
+-- | Create a term from a list of products.
 fromList :: [(Integer,Lit)] -> Term
 fromList axs = Term axs
 
