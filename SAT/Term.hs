@@ -143,7 +143,7 @@ normPositive (Term axs :<=: k) =
       (k + sum [ -a | (a,x) <- axs, a < 0 ])
 
 normFactorize :: Constr -> Constr
-normFactorize = id
+normFactorize = id -- TODO!
 
 ------------------------------------------------------------------------------
 
