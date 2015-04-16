@@ -150,12 +150,10 @@ normFactorize = id
 -- | Adds a normalized LEQ-constraint.
 addNormedConstrOr :: Solver -> [Lit] -> Constr -> IO ()
 addNormedConstrOr s pre (Term axs :<=: k)
+  | k < 0                         = addClause s pre
   | sum [ a | (a,_) <- axs ] <= k = return ()
   | otherwise                     = go zero axs k
  where
-  go u axs k | k < 0 =
-    do addClause s pre
-
   go u axs 0 =
     do addClause s (u .<= 0 : pre)
        sequence_ [ addClause s (neg x : pre) | (_,x) <- axs ]
