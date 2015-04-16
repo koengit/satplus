@@ -79,14 +79,16 @@ invert (Unary n xs) = Unary n (reverse (map neg xs))
 
 -- | Compares a unary number with a constant.
 (.<=), (.<), (.>=), (.>) :: Unary -> Int -> Lit
-u .>  k = u .>= (k+1)
+--u .>  k = u .>= (k+1)
 u .<  k = neg (u .>= k)
 u .<= k = u .< (k+1)
+u .>= k = u .> (k-1)
 
-Unary n xs .>= k
-  | k <= 0    = true
-  | k >  n    = false
-  | otherwise = xs !! (k-1)
+Unary n xs .> k
+--  | length xs /= n = error ("unary: length " ++ show xs ++ " /= " ++ show n)
+  | k < 0     = true
+  | k >= n    = false
+  | otherwise = xs !! k
 
 -- | Integer division by a (strictly positive) constant.
 (//) :: Unary -> Int -> Unary
@@ -122,7 +124,7 @@ modulo s (Unary n xs) k =
                       , let a = last as
                       ]
      ys <- sequence [ orl s bs | bs <- transpose xss1 ]
-     return (Unary (k-1) ys)
+     return (Unary (if null ys then 0 else k-1) ys)
  where
   xss = map pad . takeWhile (not . null) . map (take k) . iterate (drop k) $ xs
   pad = take k . (++ repeat false)
