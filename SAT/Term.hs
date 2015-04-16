@@ -6,16 +6,16 @@ This module can be used to implement so-called pseudo-boolean constraints.
 These are constraints of the form:
 
 @
-a1 * x1 + ... + ak * xk <= k
+a1 * x1 + ... + ak * xk <= c
 @
 
-where @a1@..@an@ and @k@ are integer constants, and @x1@..@xk@ are SAT literals.
+where @a1@..@an@ and @c@ are integer constants, and @x1@..@xk@ are SAT literals.
 
 To add such a constraint, simply create two terms:
 
 @
 lhs = fromList [(a1,x1),..,(ak,xk)]
-rhs = number k
+rhs = number c
 @
 
 and use any of the comparison constraints in the 'Order' type class, for
