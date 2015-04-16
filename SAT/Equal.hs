@@ -1,3 +1,11 @@
+{-|
+Module      : SAT.Equal
+Description : Equality functions on things that live in the SAT-solver
+
+This module provides a type class with functions for asserting the equality
+or inequality of two objects, as well as functions that compute whether or
+not two objects are equal or not.
+-}
 module SAT.Equal(
   -- * Constraints
     equal

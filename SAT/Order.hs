@@ -1,3 +1,11 @@
+{-|
+Module      : SAT.Order
+Description : Comparison functions on things that live in the SAT-solver
+
+This module provides a type class with functions for asserting the ordering
+of two objects, as well as functions that compute whether or
+not an object compares to another object.
+-}
 module SAT.Order(
   -- * Functions
     isGreaterThan

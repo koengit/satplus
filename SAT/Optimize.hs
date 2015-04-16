@@ -1,3 +1,7 @@
+{-|
+Module      : SAT.Optimize
+Description : Finding the optimal solution, according to a specified objective
+-}
 module SAT.Optimize where
 
 import SAT as S

@@ -1,3 +1,7 @@
+{-|
+Module      : SAT.Bool
+Description : Basic boolean functions and constraints
+-}
 module SAT.Bool where
 
 import SAT

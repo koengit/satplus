@@ -1,3 +1,7 @@
+{-|
+Module      : SAT.Test
+Description : QuickCheck properties for many of the functions in this library
+-}
 {-# LANGUAGE TemplateHaskell #-}
 module SAT.Test where
 

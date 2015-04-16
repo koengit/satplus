@@ -1,3 +1,8 @@
+{-|
+Module      : SAT.Unary
+Description : Functions for working with natural numbers represented as
+              unary numbers.
+-}
 module SAT.Unary(
   -- * The Unary type
     Unary
@@ -38,7 +43,7 @@ import Prelude hiding ( Enum(succ,pred) )
 
 ------------------------------------------------------------------------------
 
--- | The type Unary, for unary numbers
+-- | The type Unary, for natural numbers represented in unary
 data Unary = Unary Int [Lit] -- sorted 11..1100..00
  deriving ( Eq, Ord )
 

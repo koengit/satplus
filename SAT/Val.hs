@@ -1,3 +1,7 @@
+{-|
+Module      : SAT.Val
+Description : Functions for working with symbolic values
+-}
 module SAT.Val(
   -- * The Val type
     Val

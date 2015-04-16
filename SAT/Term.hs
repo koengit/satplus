@@ -1,3 +1,34 @@
+{-|
+Module      : SAT.Term
+Description : Representing sums of products of literals
+
+This module can be used to implement so-called pseudo-boolean constraints.
+These are constraints of the form:
+
+@
+a1 * x1 + ... + ak * xk <= k
+@
+
+where @a1@..@an@ and @k@ are integer constants, and @x1@..@xk@ are SAT literals.
+
+To add such a constraint, simply create two terms:
+
+@
+lhs = fromList [(a1,x1),..,(ak,xk)]
+rhs = number k
+@
+
+and use any of the comparison constraints in the 'Order' type class, for
+example:
+
+@
+lessThanEqual s lhs rhs
+@
+
+When adding a constraint, terms are normalized as much as possible (so the
+user does not have to worry about this). When creating terms, almost no
+normalization happens.
+-}
 module SAT.Term(
   -- * Terms
     Term
