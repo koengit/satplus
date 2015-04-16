@@ -8,6 +8,7 @@ import qualified SAT.Val   as V
 import SAT.Optimize
 import SAT.Equal
 import SAT.Order
+import SAT.Term as T
 
 import Test.QuickCheck
 import Test.QuickCheck.Modifiers
@@ -403,6 +404,15 @@ prop_compareVal pre incl (NonEmpty xs) (NonEmpty ys) =
        b <- run $ solve s [v1 V..= x, v2 V..= y]
        monitor (whenFail (putStrLn ("solve=" ++ show b)))
        assert (b == (or (map bol pre) || (if incl then x <= y else x < y)))
+
+------------------------------------------------------------------------------
+
+prop_constraint pre axs k =
+  satfun $ \s lit bol ->
+    do run $ lessThanEqualOr s (map lit pre) (T.fromList [ (a,lit x) | (a, x) <- axs ]) (T.number k)
+       b <- run $ solve s []
+       monitor (whenFail (putStrLn ("solve=" ++ show b)))
+       assert (b == (or (map bol pre) || (sum [ a | (a, x) <- axs, bol x] <= k)))
 
 ------------------------------------------------------------------------------
 
