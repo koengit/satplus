@@ -53,6 +53,7 @@ import Data.List( sortBy, groupBy )
 
 -- | A type to represent sums of products of literals.
 data Term = Term{ toList :: [(Integer,Lit)] {- ^ Look inside a term. -} }
+ deriving ( Eq, Ord, Show )
 
 -- | Create a constant term.
 number :: Integer -> Term
