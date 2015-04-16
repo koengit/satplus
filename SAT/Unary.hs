@@ -3,6 +3,7 @@ module SAT.Unary(
     Unary
   , newUnary
   , zero
+  , number
   , digit
   , maxValue
 
@@ -54,6 +55,10 @@ newUnary s n =
 -- | Creates 0 as a unary number.
 zero :: Unary
 zero = Unary 0 []
+
+-- | Creates n as a unary number.
+number :: Int -> Unary
+number n = Unary n (replicate n true)
 
 -- | Successor.
 succ :: Unary -> Unary
