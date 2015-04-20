@@ -164,11 +164,7 @@ addNormedConstrOr s pre (Term axs :<=: k)
 
   go u axs k =
     do u' <- addList s (u : [ digit x | (a,x) <- axs, odd a ])
-       if even k then
-         do x <- modulo s u' 2
-            go (u' // 2) ((1,x .>= 1):axs2) (k `div` 2)
-        else
-         do go (u' // 2) axs2 (k `div` 2)
+       go ((if even k then U.succ u' else u') // 2) axs2 (k `div` 2)
    where
     axs2 = [ (a `div` 2, x) | (a,x) <- axs, a > 1 ]
 
