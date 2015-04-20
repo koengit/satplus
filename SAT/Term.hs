@@ -104,7 +104,7 @@ data Constr = Term :<=: Integer
 -- 1. Constant literals do not occur
 -- 2. Every literal only occurs at most once; either positively or negatively
 -- 3. All factors are strictly positive
--- 4. We have divided the constraint by factors as much as we can
+-- 4. We have divided by appropriate constants as much as we can
 --    (..still an open problem for now..)
 norm :: Constr -> Constr
 norm = normFactorize
@@ -143,7 +143,11 @@ normPositive (Term axs :<=: k) =
       (k + sum [ -a | (a,x) <- axs, a < 0 ])
 
 normFactorize :: Constr -> Constr
-normFactorize = id -- TODO!
+normFactorize constr@(Term axs :<=: k) =
+  Term [ (a `div` n, x) | (a,x) <- axs ] :<=: (k `div` n)
+ where
+  n | null axs  = 1
+    | otherwise = foldr1 gcd [ a | (a,_) <- axs ]
 
 ------------------------------------------------------------------------------
 
