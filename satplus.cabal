@@ -51,7 +51,7 @@ cabal-version:       >=1.10
 
 library
   -- Modules exported by the library.
-  exposed-modules:     SAT, SAT.Optimize, SAT.Unary, SAT.Util, SAT.Term, SAT.Order, SAT.Binary, SAT.Val, SAT.Bool, SAT.Equal
+  exposed-modules:     SAT, SAT.Optimize, SAT.Unary, SAT.Util, SAT.Term, SAT.Value, SAT.Order, SAT.Binary, SAT.Val, SAT.Bool, SAT.Equal
 
   -- Modules included in this library but not exported.
   -- other-modules:    SAT.Test
