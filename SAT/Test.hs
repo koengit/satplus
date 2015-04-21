@@ -12,7 +12,7 @@ import qualified SAT.Val   as V
 import SAT.Optimize
 import SAT.Equal
 import SAT.Order
-import SAT.Term as T
+import qualified SAT.Term as T
 
 import Test.QuickCheck
 import Test.QuickCheck.Modifiers
@@ -417,6 +417,14 @@ prop_constraint pre axs k =
        b <- run $ solve s []
        monitor (whenFail (putStrLn ("solve=" ++ show b)))
        assert (b == (or (map bol pre) || (sum [ a | (a, x) <- axs, bol x] <= k)))
+
+prop_newTerm (NonNegative k) (NonNegative n) =
+  satfun $ \s lit bol ->
+    do monitor ((k <= n) ==>)
+       t <- run $ T.newTerm s n
+       run $ greaterThanEqual s t (T.number k)
+       b <- run $ solve s []
+       assert b
 
 ------------------------------------------------------------------------------
 

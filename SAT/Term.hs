@@ -33,6 +33,7 @@ module SAT.Term(
   -- * Terms
     Term
   , SAT.Term.number
+  , newTerm
   , fromList
   , toList
   , (.+.)
@@ -55,6 +56,32 @@ import Data.List( sortBy, groupBy )
 -- | A type to represent sums of products of literals.
 data Term = Term{ toList :: [(Integer,Lit)] {- ^ Look inside a term. -} }
  deriving ( Eq, Ord, Show )
+
+-- | Create a fresh term, between 0 and n.
+newTerm :: Solver -> Integer -> IO Term
+newTerm s n = go [] 1 n
+ where
+  go axs _ 0 =
+    do return (Term axs)
+
+  go axs k n | k <= n =
+    do x <- newLit s
+       go ((k,x):axs) (2*k) (n-k)
+
+  go axs k n =
+    do x <- newLit s
+       sequence_ [ addClause s (neg x : c) | c <- atLeast (k-n) (sum (map fst axs)) axs ]
+       return (Term ((n,x):axs))
+   where
+    atLeast b s _ | b <= 0 =
+      []
+
+    atLeast b s _ | s < b =
+      [ [] ]
+
+    atLeast b s ((a,x):axs) =
+      [     xs | xs <- atLeast (b-a) (s-a) axs ] ++
+      [ x : xs | xs <- atLeast b     (s-a) axs ]
 
 -- | Create a constant term.
 number :: Integer -> Term
