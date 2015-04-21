@@ -39,6 +39,7 @@ module SAT.Term(
   , (.-.)
   , (.*)
   , minus
+  , SAT.Term.modelValue
   )
  where
 
@@ -78,6 +79,15 @@ c .* Term axs = Term [ (c*a,x) | c /= 0, (a,x) <- axs, a /= 0 ]
 -- | Negate a term.
 minus :: Term -> Term
 minus t = (-1) .* t
+
+-- | Look at the value of a term.
+modelValue :: Solver -> Term -> IO Integer
+modelValue s (Term axs) =
+  do ns <- sequence [ val a `fmap` S.modelValue s x | (a,x) <- axs ]
+     return (sum ns)
+ where
+  val a False = 0
+  val a True  = a
 
 ------------------------------------------------------------------------------
 
