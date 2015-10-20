@@ -59,7 +59,7 @@ type Sudoku' = [[Val Int]]
 fromSudoku :: Solver -> Sudoku -> IO Sudoku'
 fromSudoku sol = mapM (mapM fromCell) . rows
   where
-    fromCell Nothing  = newVal sol [1 .. (9 :: Int)]
+    fromCell Nothing  = newVal sol [1..9]
     fromCell (Just c) = return (val c)
 
 toSudoku :: Solver -> Sudoku' -> IO Sudoku
