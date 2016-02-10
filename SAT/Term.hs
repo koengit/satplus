@@ -47,11 +47,11 @@ module SAT.Term(
  where
 
 import SAT as S
-import SAT.Unary as U
 import SAT.Equal
 import SAT.Order
 
-import Data.List( sortBy, groupBy )
+import Data.List( sort, group, sortBy, groupBy, minimumBy )
+import Data.Ord( comparing )
 
 ------------------------------------------------------------------------------
 
@@ -217,19 +217,130 @@ normFactorize constr@(Term axs :<=: k) =
 
 -- | Adds a normalized LEQ-constraint.
 addNormedConstrOr :: Solver -> [Lit] -> Constr -> IO ()
-addNormedConstrOr s pre (Term axs :<=: k)
-  | k < 0                         = addClause s pre
-  | sum [ a | (a,_) <- axs ] <= k = return ()
-  | otherwise                     = go zero axs k
+addNormedConstrOr s pre (Term axs :<=: k) =
+  do --putStrLn (show axs ++ " <= " ++ show k)
+     go pre (reverse (sort axs)) k
  where
-  go u axs 0 =
-    do addClause s (u .<= 0 : pre)
-       sequence_ [ addClause s (neg x : pre) | (_,x) <- axs ]
+  -- all 1
+  --go pre axs k | all (==1) (map fst axs) =
+  --  do putStrLn (show pre ++ " | ALL 1: " ++ show (Term axs) ++ " <= " ++ show k)
 
-  go u axs k =
-    do u' <- addList s (u : [ digit x | (a,x) <- axs, odd a ])
-       go ((if even k then U.succ u' else u') // 2) axs2 (k `div` 2)
+  -- expand whenever possible
+  go pre axs k | k <= 0 || n <= 8 || cs `lengthLeq` 64 =
+    do --if not (null cs)
+       --  then putStrLn (show pre ++ " | " ++ show axs ++ " <= " ++ show k)
+       --  else return ()
+       sequence_ [ do addClause s (pre ++ c) {- ; print (pre ++ c) -} | c <- cs ]
    where
-    axs2 = [ (a `div` 2, x) | (a,x) <- axs, a > 1 ]
+    n  = length axs
+    cs = expand axs (sum [ a | (a,_) <- axs ]) k
+  
+    expand _  m k | k < 0  = [[]]
+    expand _  m k | m <= k = []
+    expand ((a,x):axs) m k =
+      [ neg x : c | c <- expand axs m' (k-a) ] ++
+      expand axs m' k
+     where
+      m' = m-a
+
+    (_:_)  `lengthLeq` 0 = False
+    []     `lengthLeq` _ = True
+    (_:xs) `lengthLeq` n = xs `lengthLeq` (n-1)
+
+  -- case split on largest coefficient whenever possible
+  go pre ((a,x):axs) k | a >= k || a >= sum [ a | (a,_) <- axs ] =
+    do go (neg x : pre) axs (k-a)
+       go pre axs k
+
+  -- split according to p*A + B <= k --> A <= t & p*t + B <= k
+  go pre axs@((a,_):_) k =
+    do i <- newTerm s (maxI-minI)
+       let t = number minI .+. i
+       --putStrLn ("t = " ++ show t)
+       --putStrLn (show minI ++ " <= t <= " ++ show maxI)
+       --putStrLn (show (Term axs') ++ " <= t")
+       --putStrLn (show p ++ " * t + " ++ show (Term bxs) ++ " <= " ++ show k)
+       if p > 1 && myc <= c then error "cost!" else return ()
+       lessThanEqualOr s pre (Term axs') t
+       lessThanEqualOr s pre (p .* t .+. Term bxs) (number k)
+   where
+    n  = length axs
+    n2 = n `div` 2
+
+    (p, axs', bxs, minI, maxI) =
+      minimumOn cost possibilities
+
+    myc = cost (1, axs, [], 0, 0)
+    c   = cost (p, axs', bxs, minI, maxI)
+
+    cost (p, axs', bxs, minI, maxI) =
+      if p == 1
+        then (ca,va) `max` (cb,vb)
+        else (cb, vb)
+     where
+      r  = maxI - minI
+      v  = log2 r
+      va = length axs' + v
+      vb = length bxs + v
+      ca = sum [ a     | (a,_) <- axs' ] + r
+      cb = sum [ abs b | (b,_) <- bxs ] + p*r
+
+      log2 0 = 0
+      log2 n = 1 + log2 (n `div` 2)
+
+    addRange (p, axs', bxs) = (p, axs', bxs, minI, maxI)
+     where
+      minL = 0 -- = minValue (Term axs')
+      maxL = maxValue (Term axs')
+      minR = (k - maxValue (Term bxs)) `div` p
+      maxR = (k - minValue (Term bxs)) `div` p
+      minI = minL `max` minR
+      maxI = maxL `min` maxR
+
+    possibilities =
+      map addRange $
+      [ (1, axs', take n2 axs)
+      | let axs' = reverse (drop n2 axs)
+      -- , tight 1 axs'
+      ] ++
+      [ (p, axs', bxs)
+      | p <- ps
+      , let dmxs = [ (a `aDivMod` p,x) | (a,x) <- axs ]
+            axs' = [ (d,x) | ((d,_),x) <- dmxs, d /= 0 ]
+            bxs  = [ (m,x) | ((_,m),x) <- dmxs, m /= 0 ]
+      ]
+
+    tight s []          = True
+    tight s ((a,_):axs) = a <= s && tight (s+a) axs
+
+    a `aDivMod` p
+      | abs m2 < m1 = (d2,m2)
+      | otherwise   = (d1,m1)
+     where
+      (d1,m1) = (a `div` p, a `mod` p)
+      (d2,m2) = (d1+1,m1-p)
+
+    ps = map head . group . sort $
+      takeWhile (<=a) [2,3,5,7] ++
+      as ++ gcds as
+     where
+      as = [ a | (a,_) <- axs, a /= 1 ]
+
+    gcds []  = []
+    gcds [_] = []
+    gcds xs  = zipWith gcd xs (tail xs ++ [head xs])
+
+minimumOn :: Ord b => (a -> b) -> [a] -> a
+minimumOn f xs = snd . minimumBy (comparing fst) $ [ (f x, x) | x <- xs ]
+
+--------------------------------------------------------------------------------
+
+test =
+  do s <- newSolver
+     [x1,x2,x3,x4,x5,x6,x7,x8,x9] <- sequence [ newLit s | i <- [1..9] ]
+     lessThanEqualOr s []
+       (fromList [(1,x1),(1,x2),(1,x3),(1,x4),(1,x5),(1,x6),(1,x7),(1,x8),(1,x9)])
+       (number 5)
+     deleteSolver s
 
 ------------------------------------------------------------------------------
