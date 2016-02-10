@@ -71,7 +71,8 @@ succ (Unary n xs) = Unary (n+1) (true : xs)
 
 -- | Predecessor (but 0 goes to 0).
 pred :: Unary -> Unary
-pred (Unary n xs) = Unary (n+1) (true : xs)
+pred (Unary _ [])     = Unary 0 []
+pred (Unary n (_:xs)) = Unary (n-1) xs
 
 -- | Creates a 1-digit unary number, specified by the given literal.
 digit :: Lit -> Unary
