@@ -40,6 +40,8 @@ module SAT.Term(
   , (.-.)
   , (.*)
   , minus
+  , minValue
+  , SAT.Term.maxValue
   , SAT.Term.modelValue
   )
  where
@@ -55,7 +57,24 @@ import Data.List( sortBy, groupBy )
 
 -- | A type to represent sums of products of literals.
 data Term = Term{ toList :: [(Integer,Lit)] {- ^ Look inside a term. -} }
- deriving ( Eq, Ord, Show )
+ deriving ( Eq, Ord )
+
+instance Show Term where
+  show (Term axs) =
+    combine [ if x == true then show a else
+                (if a == 1 then ""
+               else if a == -1 then "-"
+               else show a ++ "*")
+                 ++ show x
+            | (a,x) <- axs
+            , a /= 0
+            ]
+   where
+    combine []       = "0"
+    combine [x]      = x
+    combine (x:y:xs)
+      | take 1 y == "-" = x ++ combine (y:xs)
+      | otherwise       = x ++ "+" ++ combine (y:xs)
 
 -- | Create a fresh term, between 0 and n.
 newTerm :: Solver -> Integer -> IO Term
@@ -106,6 +125,14 @@ c .* Term axs = Term [ (c*a,x) | c /= 0, (a,x) <- axs, a /= 0 ]
 -- | Negate a term.
 minus :: Term -> Term
 minus t = (-1) .* t
+
+-- | Compute the minimum value of a term.
+minValue :: Term -> Integer
+minValue (Term axs) = sum [ a | (a,x) <- axs, x == true || (a < 0 && x /= false) ]
+
+-- | Compute the maximum value of a term.
+maxValue :: Term -> Integer
+maxValue (Term axs) = sum [ a | (a,x) <- axs, x == true || (a > 0 && x /= false) ]
 
 -- | Look at the value of a term.
 modelValue :: Solver -> Term -> IO Integer
