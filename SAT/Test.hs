@@ -428,10 +428,6 @@ prop_newTerm (NonNegative k) (NonNegative n) =
 
 ------------------------------------------------------------------------------
 
-testAll = $(quickCheckAll)
-
-------------------------------------------------------------------------------
-
 satfun h =
   monadicIO $
     do s  <- run $ newSolver
@@ -471,3 +467,10 @@ instance Arbitrary LIT where
   shrink (LIT x) =
     [ LIT (-1) | x /= (-1) ] ++
     [ LIT 1    | abs x /= 1 ]
+
+------------------------------------------------------------------------------
+
+return []
+testAll = $(quickCheckAll)
+
+
