@@ -26,6 +26,7 @@ module SAT.Unary(
   , invert
   , succ
   , pred
+  , (**)
   , (//)
   , modulo
 
@@ -41,7 +42,7 @@ import SAT.Equal
 import SAT.Order
 import Data.List( sort, insert, transpose )
 
-import Prelude hiding ( Enum(succ,pred) )
+import Prelude hiding ( Enum(succ,pred), (**) )
 
 ------------------------------------------------------------------------------
 
@@ -97,6 +98,12 @@ Unary n xs .> k
   | k < 0     = true
   | k >= n    = false
   | otherwise = xs !! k
+
+-- | Integer multiplication by a (non-negative) constant.
+(**) :: Unary -> Int -> Unary
+Unary n xs ** k =
+  -- Idea: expand every literal k times.
+  Unary (n * k) (concat [ replicate k x | x <- xs ])
 
 -- | Integer division by a (strictly positive) constant.
 (//) :: Unary -> Int -> Unary
