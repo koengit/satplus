@@ -37,7 +37,7 @@ class Equal a where
   notEqualOr :: Solver -> [Lit] {- ^ prefix -} -> a -> a -> IO ()
 
   -- | Return a literal that represents the arguments being equal or not.
-  isEqual :: Equal a => Solver -> a -> a -> IO Lit
+  isEqual :: Solver -> a -> a -> IO Lit
   isEqual s x y =
     do q <- newLit s
        equalOr s [neg q] x y
