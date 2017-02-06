@@ -333,14 +333,4 @@ addNormedConstrOr s pre (Term axs :<=: k) =
 minimumOn :: Ord b => (a -> b) -> [a] -> a
 minimumOn f xs = snd . minimumBy (comparing fst) $ [ (f x, x) | x <- xs ]
 
---------------------------------------------------------------------------------
-
-test =
-  do s <- newSolver
-     [x1,x2,x3,x4,x5,x6,x7,x8,x9] <- sequence [ newLit s | i <- [1..9] ]
-     lessThanEqualOr s []
-       (fromList [(1,x1),(1,x2),(1,x3),(1,x4),(1,x5),(1,x6),(1,x7),(1,x8),(1,x9)])
-       (number 5)
-     deleteSolver s
-
 ------------------------------------------------------------------------------
