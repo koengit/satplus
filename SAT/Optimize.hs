@@ -98,8 +98,9 @@ solveOptimize s ass obj callback =
                        do n <- U.modelValue s obj
                           opti minTry n
                       else
-                       do ass' <- conflict s
-                          opti (maximum ([i+1 | i <- [k..minReached-1], neg (obj .<= i) `elem` ass'] ++ [k+1])) minReached
+                       do cfl <- conflict s
+                          let ass' = [i | i <- [k..minReached-1], neg (obj .<= i) `elem` cfl]
+                          opti (if null ass' then k+1 else minimum ass'+1) minReached
                  else
                   -- callback says: give up
                   do return Nothing
