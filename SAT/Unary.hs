@@ -164,7 +164,7 @@ add s (Unary n xs) (Unary m ys) =
 addUpTo :: Solver -> Int -> Unary -> Unary -> IO Unary
 addUpTo s k (Unary n xs) (Unary m ys) =
   do zs <- merge s k xs ys
-     return (Unary (n+m) zs)
+     return (Unary (k `min` (n+m)) zs)
 
 merge :: Solver -> Int -> [Lit] -> [Lit] -> IO [Lit]
 merge s k []  ys  = return (take k ys)
