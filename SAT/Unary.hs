@@ -17,6 +17,7 @@ module SAT.Unary(
 
   -- * Counting
   , count
+  , countUpTo
   , add
   , addList
   , mul1
@@ -149,26 +150,44 @@ modulo s (Unary n xs) k =
 count :: Solver -> [Lit] -> IO Unary
 count s xs = addList s (map digit xs)
 
+-- | Like 'count', but  chops the result off at k.
+countUpTo :: Solver -> Int -> [Lit] -> IO Unary
+countUpTo s k xs = addListUpTo s k (map digit xs)
+
 -- | Adds up two unary numbers.
 add :: Solver -> Unary -> Unary -> IO Unary
 add s (Unary n xs) (Unary m ys) =
-  do zs <- merge s xs ys
+  do zs <- merge s (n+m) xs ys
      return (Unary (n+m) zs)
 
-merge :: Solver -> [Lit] -> [Lit] -> IO [Lit]
-merge s []  ys  = return ys
-merge s xs  []  = return xs
-merge s [x] [y] =
+-- | Like 'add', but chops the result off at k.
+addUpTo :: Solver -> Int -> Unary -> Unary -> IO Unary
+addUpTo s k (Unary n xs) (Unary m ys) =
+  do zs <- merge s k xs ys
+     return (Unary (n+m) zs)
+
+merge :: Solver -> Int -> [Lit] -> [Lit] -> IO [Lit]
+merge s k []  ys  = return (take k ys)
+merge s k xs  []  = return (take k xs)
+
+merge s 0 [x] [y] =
+  do return []
+
+merge s 1 [x] [y] =
+  do b <- orl s [x,y]
+     return [b]
+
+merge s k [x] [y] =
   do a <- andl s [x,y]
      b <- orl s [x,y]
      return [b,a]
 
-merge s xs  ys  =
-  do zs0 <- merge s xs0 ys0
-     zs1 <- merge s xs1 ys1
+merge s k xs  ys  =
+  do zs0 <- merge s k xs0 ys0
+     zs1 <- merge s k xs1 ys1
      let zs = zs0 `ilv` zs1
-     zss <- sequence [ merge s [v] [w] | (v,w) <- pairs (tail zs) ]
-     return (take (a+b) ([head zs] ++ concat zss ++ [last zs]))
+     zss <- sequence [ merge s 2 [v] [w] | (v,w) <- pairs (tail zs) ]
+     return (take k ([head zs] ++ concat zss ++ [last zs]))
  where
   a   = length xs
   b   = length ys
@@ -213,6 +232,21 @@ addList s us = go (sort us)
 
   go (u1:u2:us) =
     do u <- add s u1 u2
+       go (insert u us)
+
+-- | Like 'addList', but chops the result off at k.
+addListUpTo :: Solver -> Int -> [Unary] -> IO Unary
+addListUpTo s 0 us = return zero
+addListUpTo s k us = go (sort us)
+ where
+  go [] =
+    do return zero
+
+  go [u] =
+    do return u
+
+  go (u1:u2:us) =
+    do u <- addUpTo s k u1 u2
        go (insert u us)
 
 -- | Multiplies a digit and a unary number.
