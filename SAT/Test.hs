@@ -159,6 +159,15 @@ prop_unary_count xs =
        bs <- run $ sequence [ modelValue s (lit x) | x <- xs ]
        assert (length (filter id bs) == n)
 
+prop_unary_countUpTo (NonNegative k) xs =
+  satfun $ \s lit bol ->
+    do u <- run $ U.countUpTo s k (map lit xs)
+       b <- run $ solve s []
+       assert b
+       n  <- run $ U.modelValue s u
+       bs <- run $ sequence [ modelValue s (lit x) | x <- xs ]
+       assert ((k `min` length (filter id bs)) == n)
+
 prop_unary_div (NonNegative m) (Positive k) =
   satfun $ \s lit bol ->
     do u <- run $ U.newUnary s m
