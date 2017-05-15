@@ -30,6 +30,10 @@ module SAT.Unary(
   , (**)
   , (//)
   , modulo
+  
+  -- * Conversion
+  , unsafeFromList
+  , toList
 
   -- * Models
   , modelValue
@@ -53,6 +57,15 @@ data Unary = Unary Int [Lit] -- sorted 11..1100..00
 
 instance Show Unary where
   show (Unary _ xs) = show xs
+
+-- | Creates a unary number from a list of digits. WARNING ("unsafe"): this 
+-- function assumes that the list of digits is sorted 11..1100..00.
+unsafeFromList :: [Lit] -> Unary
+unsafeFromList xs = Unary (length xs) xs
+
+-- | Returns the list of digits of a unary number.
+toList :: Unary -> [Lit]
+toList (Unary _ xs) = xs
 
 -- | Creates a fresh unary number, with the specified maximum value.
 newUnary :: Solver -> Int -> IO Unary
@@ -145,12 +158,12 @@ modulo s (Unary n xs) k =
   xss = map pad . takeWhile (not . null) . map (take k) . iterate (drop k) $ xs
   pad = take k . (++ repeat false)
 
--- | Returns a unary number that represents the number of True literals in
+-- | Returns a unary number that represents the number of true literals in
 -- the given list.
 count :: Solver -> [Lit] -> IO Unary
 count s xs = addList s (map digit xs)
 
--- | Like 'count', but  chops the result off at k.
+-- | Like 'count', but chops the result off at k.
 countUpTo :: Solver -> Int -> [Lit] -> IO Unary
 countUpTo s k xs = addListUpTo s k (map digit xs)
 
