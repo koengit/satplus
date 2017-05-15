@@ -35,6 +35,9 @@ module SAT.Term(
   , SAT.Term.number
   , newTerm
   , fromList
+  , fromBinary
+  , dumbFromUnary
+  , fromUnary
   , toList
   , (.+.)
   , (.-.)
@@ -49,6 +52,8 @@ module SAT.Term(
 import SAT as S
 import SAT.Equal
 import SAT.Order
+import qualified SAT.Binary as B
+import qualified SAT.Unary  as U
 
 import Data.List( sort, group, sortBy, groupBy, minimumBy )
 import Data.Ord( comparing )
@@ -109,6 +114,51 @@ number n = Term [(n,true)]
 -- | Create a term from a list of products.
 fromList :: [(Integer,Lit)] -> Term
 fromList axs = Term axs
+
+-- | Create a term from a binary number.
+fromBinary :: B.Binary -> Term
+fromBinary b = Term [ (2^i,x) | (i,x) <- [0..] `zip` B.toList b ]
+
+-- | Create a term from a unary number, the dumb way. This ignores the invariant
+-- that unary numbers obey, but avoids creating new literals and clauses. Works OK
+-- for unary numbers with few digits. The number of literals in the resulting term
+-- is linear in the size of the unary number.
+dumbFromUnary :: U.Unary -> Term
+dumbFromUnary u = Term [ (1,x) | x <- U.toList u ]
+
+-- | Create a term from a unary number, making use of the invariant
+-- that unary numbers obey. This may create extra literals and clauses. The number
+-- of literals in the resulting term is logarithmic in the size of the unary number.
+fromUnary :: Solver -> U.Unary -> IO Term
+fromUnary s u = Term `fmap` go (length xs) xs
+ where
+  xs = U.toList u
+
+  go k xs | k <= 2 =
+    do return [(1,x)|x<-xs]
+  
+  go k xs =
+    do ys <- sequence
+             [ do y <- newLit s
+                  addClause s [       neg x1,     y]
+                  addClause s [neg x,     x1, neg y]
+                  addClause s [    x, neg x0,     y]
+                  addClause s [           x0, neg y]
+                  return y
+             | (x0,x1) <- xs0 `zipp` xs1
+             ]
+       zs <- go (k-i) ys
+       return ((fromIntegral i,x):zs)
+   where
+    i   = (k+1) `div` 2
+    xs0 = take (i-1) xs
+    x   = xs!!(i-1)
+    xs1 = drop i xs
+    
+    []     `zipp` []     = []
+    xs     `zipp` []     = xs `zipp` [false]
+    []     `zipp` ys     = [false] `zipp` ys
+    (x:xs) `zipp` (y:ys) = (x,y):zipp xs ys
 
 -- | Add two terms.
 (.+.) :: Term -> Term -> Term
