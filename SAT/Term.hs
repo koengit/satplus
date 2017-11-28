@@ -43,6 +43,7 @@ module SAT.Term(
   , (.-.)
   , (.*)
   , minus
+  , multiply
   , minValue
   , SAT.Term.maxValue
   , SAT.Term.modelValue
@@ -50,6 +51,7 @@ module SAT.Term(
  where
 
 import SAT as S
+import SAT.Bool
 import SAT.Equal
 import SAT.Order
 import qualified SAT.Binary as B
@@ -175,6 +177,19 @@ c .* Term axs = Term [ (c*a,x) | c /= 0, (a,x) <- axs, a /= 0 ]
 -- | Negate a term.
 minus :: Term -> Term
 minus t = (-1) .* t
+
+-- | Multiply a term by another term (creates extra clauses and literals).
+multiply :: Solver -> Term -> Term -> IO Term
+multiply s (Term axs) (Term bys) =
+  do cxs <- sequence
+            [ do z <- andl s [x,y]
+                 return (a*b,z)
+            | (a,x) <- axs
+            , a /= 0
+            , (b,y) <- bys
+            , b /= 0
+            ]
+     return (Term cxs)
 
 -- | Compute the minimum value of a term.
 minValue :: Term -> Integer
