@@ -44,6 +44,7 @@ module SAT.Term(
   , (.*)
   , minus
   , multiply
+  , pow
   , minValue
   , SAT.Term.maxValue
   , SAT.Term.modelValue
@@ -190,6 +191,13 @@ multiply s (Term axs) (Term bys) =
             , b /= 0
             ]
      return (Term cxs)
+
+mapCoeffs :: (Integer -> Integer) -> Term -> Term
+mapCoeffs f (Term axs) = (Term [(f a, x) | (a,x) <- axs])
+
+-- | Raise a term to a constant integer power
+pow :: Integer -> Term -> Term
+pow n = mapCoeffs (\x -> x^n)
 
 -- | Compute the minimum value of a term.
 minValue :: Term -> Integer
