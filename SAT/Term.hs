@@ -109,8 +109,45 @@ newTerm s n = go [] 1 n
       [     xs | xs <- atLeast (b-a) (s-a) axs ] ++
       [ x : xs | xs <- atLeast b     (s-a) axs ]
 
+-- | Create a fresh term that can represent all numbers in the given list.
+-- (Possibly more numbers, but never numbers smaller than the minimum or larger
+-- than the maximum in the list.) 
+newTermFrom :: Solver -> [Integer] -> IO Term
+newTermFrom s [] = return (number 0)
+newTermFrom s ns = do t <- go (map (subtract n0) ns')
+                      return (t .+. number n0)
+ where
+  ns' = map head . group . sort $ ns
+  n0  = minimum ns'
+ 
+  go [n] =
+    do return (number n) -- n should be 0 here...
+
+  go ns =
+    do x <- newLit s
+       t <- go ([ n | n <- ns, n < k ] `merge` [ n-k | n <- ns, n >= k ])
+       return (fromList [(k,x)] .+. t)
+   where
+    k = compressor ns
+    
+    compressor ns = go ns
+     where
+      m = last ns
+    
+      go (x:y:xs) | 2*y > m = m-x
+      go (_:xs)             = go xs
+    
+    []     `merge` ys     = ys
+    xs     `merge` []     = xs
+    (x:xs) `merge` (y:ys) =
+      case x `compare` y of
+        LT -> x : (xs `merge` (y:ys))
+        EQ -> x : (xs `merge` ys)
+        GT -> y : ((x:xs) `merge` ys)
+
 -- | Create a constant term.
 number :: Integer -> Term
+number 0 = Term []
 number n = Term [(n,true)]
 
 -- | Create a term from a list of products.
@@ -184,12 +221,22 @@ multiply s (Term axs) (Term bys) =
   do cxs <- sequence
             [ do z <- andl s [x,y]
                  return (a*b,z)
-            | (a,x) <- axs
+            | (a,x) <- norm axs
             , a /= 0
-            , (b,y) <- bys
+            , (b,y) <- norm bys
             , b /= 0
             ]
      return (Term cxs)
+ where
+  -- TODO: could also merge positive/negative literals here
+  norm = filter ((/=0) . fst)
+       . map (\(xas@((x,_):_)) -> (sum (map snd xas),x))
+       . groupBy (\(x,_) (y,_) -> x == y)
+       . sort
+       . map swap
+       . filter ((/=false) . snd)
+
+  swap (a,x) = (x,a)
 
 -- | Compute the minimum value of a term.
 minValue :: Term -> Integer
