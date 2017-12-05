@@ -34,6 +34,7 @@ module SAT.Term(
     Term
   , SAT.Term.number
   , newTerm
+  , newTermFrom
   , fromList
   , fromBinary
   , dumbFromUnary
