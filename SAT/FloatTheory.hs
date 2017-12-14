@@ -75,12 +75,12 @@ addSplitVar fs var i = do
   modifyIORef (constraints fs) ((l, above):)
   modifyIORef (constraints fs) ((SAT.neg l, below):)
 
-solveWithFloat :: FloatSolver -> IO Bool
-solveWithFloat fs = do 
+solveWithFloat :: FloatSolver -> FExpr VarId -> IO Bool
+solveWithFloat fs goalF = do 
   maxvar <- readIORef (varCounter fs)
-  s (cycle $ [0..maxvar])
+  s (cycle $ [0..(maxvar-1)])
   where 
-    s (splitVar:vars) = do
+    s (splitVar:nextVars) = do
       boolsat <- SAT.solve (solverPtr fs) []
       if boolsat then do
         cs <- readIORef (constraints fs)
@@ -88,7 +88,7 @@ solveWithFloat fs = do
           active <- SAT.modelValue (solverPtr fs) lit
           if active then return (Just (lit,c)) else return Nothing
         bgcs <- readIORef (backgroundConstraints fs)
-        r <- (floatConjSat bgcs cs)
+        r <- (floatConjSat goalF bgcs cs)
         case r of
           Sat model -> do
             putStrLn $ "floatsolv iteration SAT: " ++ (show model)
@@ -97,11 +97,11 @@ solveWithFloat fs = do
           Unsat core -> do
             putStrLn $ "floatsolv iteration UNSAT: " ++ (show core)
             SAT.addClause (solverPtr fs) (map SAT.neg core)
-            solveWithFloat fs
+            solveWithFloat fs goalF
           Unknown box -> do
             putStrLn $ "floatsolv failed, splitting on variable v" ++ (show splitVar)
             addSplitVar fs splitVar (box Map.! splitVar)
-            solveWithFloat fs
+            s nextVars
       else do
         putStrLn "SAT solver UNSAT"
         return False

@@ -1,6 +1,5 @@
 module SAT.FloatTheory.HullConsistency (
   hullConsistency,
-  Box,
   hc4, initIntervalTree, forwardEval, backwardProp, backwardPropIO
   ) where
 
@@ -17,7 +16,6 @@ import SAT.FloatTheory.Interval (Interval, interval)
 import qualified SAT.FloatTheory.Interval as I
 import SAT.FloatTheory.Constraints
 
-type Box v = Map.Map v Interval
 
 data IConstraint var =
     ICLez Interval (ITerm var)
@@ -75,12 +73,12 @@ hc4 allC cs = go (Set.fromList cs)
           putStrLn $ "*-> " ++ (show item)
           case newBox of
             Just newBox -> if newBox /= box then do
-                let propagate = Set.fromList $ join $ catMaybes $ map (\v -> Map.lookup v allC) (changedVars box newBox)
-                putStrLn $ "  changes:  "
-                putStrLn $ "    from: " ++ (show box)
-                putStrLn $ "    to:   " ++ (show newBox)
-                putStrLn $ "    diff: " ++ (show $ changedVars box newBox)
-                putStrLn $ "  propagates to: " ++ (show propagate)
+                let propagate = Set.fromList $ item:(join $ catMaybes $ map (\v -> Map.lookup v allC) (changedVars box newBox))
+                -- putStrLn $ "  changes:  "
+                -- putStrLn $ "    from: " ++ (show box)
+                -- putStrLn $ "    to:   " ++ (show newBox)
+                -- putStrLn $ "    diff: " ++ (show $ changedVars box newBox)
+                -- putStrLn $ "  propagates to: " ++ (show propagate)
                 go (Set.union propagate rest) newBox
               else go rest box
             Nothing -> return Nothing

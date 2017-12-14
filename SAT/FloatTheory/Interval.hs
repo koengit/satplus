@@ -115,6 +115,7 @@ dmul a b
 mul :: Interval -> Interval -> Interval
 mul (Interval a1 a2) (Interval b1 b2) = Interval (minimum combs) (maximum combs)
   where combs = [dmul a1 b1, dmul a1 b2, dmul a2 b1, dmul a2 b2]
+mul _ _ = Empty
 
 invmul :: Interval -> Interval -> Interval
 invmul a@(Interval a1 a2) b@(Interval b1 b2) 

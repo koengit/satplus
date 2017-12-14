@@ -4,10 +4,11 @@ module SAT.FloatTheory.Constraints (
   FModel, 
   testModel,
   evalFExpr,
+  evalFExprGradient,
   vars, cvars, 
-  (.+.), (.-.), (.*.), (.==.), (.<=.), (.>=.), square
+  (.+.), (.-.), (.*.), (.==.), (.<=.), (.>=.), square,
+  FloatSatResult(..), Box
   ) where
-
 
 -- TODO REMOVE constraint, replace with interval and fexpr
 
@@ -16,10 +17,26 @@ import qualified Data.Set as Set
 import Data.Set (Set)
 import Data.Map (Map)
 
+import SAT.FloatTheory.Interval
+
+data FloatSatResult v id = Sat (FModel v) | Unsat [id] | Unknown (Box v)
+  deriving (Show)
+type Box v = Map.Map v Interval
+
+
 data FConstraint v = 
     CLez (FExpr v)
   | CEqz (FExpr v)
   deriving (Ord, Eq) -- TODO: order by priority
+
+-- instance Ord v => Ord (FConstraint v) where
+--   compare a b 
+--     | v a /= v b = compare (v a) (v b)
+--     where v = Set.size . Set.fromList . cvars
+--   compare (CLez _) (CEqz _) = LT
+--   compare (CEqz _) (CLez _) = GT
+--   compare (CLez x) (CLez y) = compare x y
+--   compare (CEqz x) (CEqz y) = compare x y
 
 instance Show v => Show (FConstraint v) where
   show (CLez e) = (show e) ++ " <= 0"
@@ -81,4 +98,18 @@ evalFExpr m = evalT
     evalT (TSub a b) = (-) (evalT a) (evalT b)
     evalT (TMul a b) = (*) (evalT a) (evalT b)
     evalT (TSqr a) = (^2) (evalT a)
+
+evalFExprGradient :: Ord v => [v] -> FModel v -> FExpr v -> [Double]
+evalFExprGradient vars model = snd . evalT
+  where 
+    evalT (TConst c) = (c, [ 0 | _ <- vars ])
+    evalT (TVar v)   = ((Map.!) model v, [ if x == v then 1 else 0  | x <- vars ])
+    evalT (TAdd a b) = (xa + xb, [da + db | (da,db) <- zip vda vdb] )
+      where ((xa,vda),(xb,vdb)) = (evalT a, evalT b)
+    evalT (TSub a b) = (xa - xb, [da - db | (da,db) <- zip vda vdb] )
+      where ((xa,vda),(xb,vdb)) = (evalT a, evalT b)
+    evalT (TMul a b) = (xa * xb, [db*xa + da*xb | (da,db) <- zip vda vdb] )
+      where ((xa,vda),(xb,vdb)) = (evalT a, evalT b)
+    evalT (TSqr a) = (xa*xa, [2*da*xa |da <- vda])
+      where (xa,vda) = (evalT a)
 

@@ -16,36 +16,39 @@ import SAT.FloatTheory.Constraints
 import SAT.FloatTheory.HullConsistency
 import SAT.FloatTheory.Interval (Interval, interval)
 import qualified SAT.FloatTheory.Interval as I
+import SAT.FloatTheory.Optimization
 
-data FloatSatResult v id = Sat (FModel v) | Unsat [id] | Unknown (Box v)
-  deriving (Show)
 
 nub :: Ord v => [v] -> [v]
 nub = Set.toList . Set.fromList
 
-floatConjSat :: (Show id, Ord id, Show v, Ord v) => [FConstraint v] -> [(id, FConstraint v)] -> IO (FloatSatResult v id)
-floatConjSat base cs = do
+floatConjSat :: (Show id, Ord id, Show v, Ord v) => FExpr v -> [FConstraint v] -> [(id, FConstraint v)] -> IO (FloatSatResult v id)
+floatConjSat goalF base cs = do
   putStrLn $ " --- "
   putStrLn $ " FloatConjSat with:"
   forM_ base $ \b -> do
      putStrLn $ " b*> " ++ (show b)
   forM_ cs $ \c -> do
     putStrLn $ " c*> " ++ (show c)
+  putStrLn "Start hull consistency"
   box <- hullConsistency (base ++ (map snd cs))
+  putStrLn "End hull consistency"
   -- putStrLn $ "HULL CONSISTENCY: got box " ++ (show box)
   -- error "ok"
   case box of
     Just b -> do
-       model <- sample b
-       let ok = testModel (map snd cs) model
-       case ok of 
-         True -> return $ Sat model
-         False -> return $ Unknown b
-       -- putStrLn $ "floatConjSat: sat, testing model"
-       -- result <- resultBox (base ++ (map snd cs)) b
-       -- case result of
-       --   Just model -> return $ Sat model
-       --   Nothing -> return $ Unknown model
+       putStrLn "hull consistent, but no solution yet -- calling nlopt"
+       nloptSat b goalF cs
+       -- model <- sample b
+       -- let ok = testModel (map snd cs) model
+       -- case ok of 
+       --   True -> return $ Sat model
+       --   False -> return $ Unknown b
+       -- -- putStrLn $ "floatConjSat: sat, testing model"
+       -- -- result <- resultBox (base ++ (map snd cs)) b
+       -- -- case result of
+       -- --   Just model -> return $ Sat model
+       -- --   Nothing -> return $ Unknown model
     Nothing -> do
        putStrLn $ "floatConjSat: unsat, finding core"
        core <- blackboxUnsatCore hullConsistency splitMid base cs
