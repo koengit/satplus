@@ -1,120 +1,138 @@
 module SAT.FloatTheory.Solver (
-  FloatSatResult(..),
-  floatConjSat
+  solveMinimizeFloat
   ) where
 
--- Partial decision of satisfiability of conjunctions of 
--- floating point constraints, with a numerical tolerance.
+-- Numerical floating point constraints solver.
 --
-import qualified Data.Map.Strict as Map
+-- Based on the HC4 hull consistency algorithm and the NLOpt library for local
+-- search.
+--
+-- This solver gives answers fulfilling constraints within given tolerances, 
+-- and makes no attempt to safely overapproximate floating point operations.
+-- It is therefore not suitable for verification of floating point programs,
+-- but is instead aimed at numerical engineering problems.
+--
+
+import Data.Maybe (isNothing)
+import Control.Monad (filterM, forM, forM_)
+import Control.Monad.Identity
+import Data.IORef
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Data.Map (Map)
-import Control.Monad (forM, forM_)
+import Data.Maybe (fromJust, isNothing, isJust)
 
+import qualified SAT
 import SAT.FloatTheory.Constraints
+import SAT.FloatTheory.Model
 import SAT.FloatTheory.HullConsistency
-import SAT.FloatTheory.Interval (Interval, interval)
-import qualified SAT.FloatTheory.Interval as I
 import SAT.FloatTheory.Optimization
+import SAT.FloatTheory.SolverObject
 
+import Debug.Trace
 
-nub :: Ord v => [v] -> [v]
-nub = Set.toList . Set.fromList
+data TheoryStepResult  = TheorySat FloatModel 
+                       | TheoryUnsatSubset [SAT.Lit] 
 
-floatConjSat :: (Show id, Ord id, Show v, Ord v) => FExpr v -> [FConstraint v] -> [(id, FConstraint v)] -> IO (FloatSatResult v id)
-floatConjSat goalF base cs = do
-  putStrLn $ " --- "
-  putStrLn $ " FloatConjSat with:"
-  forM_ base $ \b -> do
-     putStrLn $ " b*> " ++ (show b)
-  forM_ cs $ \c -> do
-    putStrLn $ " c*> " ++ (show c)
-  putStrLn "Start hull consistency"
-  box <- hullConsistency (base ++ (map snd cs))
-  putStrLn "End hull consistency"
-  -- putStrLn $ "HULL CONSISTENCY: got box " ++ (show box)
-  -- error "ok"
-  case box of
-    Just b -> do
-       putStrLn "hull consistent, but no solution yet -- calling nlopt"
-       nloptSat b goalF cs
-       -- model <- sample b
-       -- let ok = testModel (map snd cs) model
-       -- case ok of 
-       --   True -> return $ Sat model
-       --   False -> return $ Unknown b
-       -- -- putStrLn $ "floatConjSat: sat, testing model"
-       -- -- result <- resultBox (base ++ (map snd cs)) b
-       -- -- case result of
-       -- --   Just model -> return $ Sat model
-       -- --   Nothing -> return $ Unknown model
-    Nothing -> do
-       putStrLn $ "floatConjSat: unsat, finding core"
-       core <- blackboxUnsatCore hullConsistency splitMid base cs
-       -- putStrLn $ "RETURNING CORE " ++ (show core)
-       -- forM_ cs $ \c -> do
-       --   putStrLn $ " c*> " ++ (show c)
-       putStrLn $ "  Core num constraints " ++ (show (length core)) ++ "/" ++ (show (length cs))
-       return (Unsat core)
+solveMinimizeFloat :: FloatSolver -> FloatExpr -> IO Bool
+solveMinimizeFloat fs goal = do
+  numVars <- readIORef (varCounter fs)
+  cs <- readIORef (constraints fs)
+  bgcs <- readIORef (backgroundConstraints fs)
+  fparams <- readIORef (solverParams fs)
+  go numVars cs bgcs fparams
+  where 
+    go numVars cs bgcs fparams = theoryLoop
+      where
+        theoryLoop :: IO Bool
+        theoryLoop = do
+          boolsat <- SAT.solve (solverPtr fs) []
+          if boolsat then do
+            activeC <- filterM (\(l,_) -> SAT.modelValue (solverPtr fs) l) cs
+            step <- theoryStep activeC
+            case step of
+              TheorySat model -> do 
+                putStrLn $ "Theory sat " ++ (show model)
+                writeIORef (fmodel fs) (Just model)
+                return True
+              TheoryUnsatSubset lits -> do 
+                putStrLn $ "Theory unsat " ++ (show lits)
+                SAT.addClause (solverPtr fs) (map SAT.neg lits)
+                theoryLoop
+          else return False
+          
+        theoryStep :: [(SAT.Lit, FloatConstraint)] -> IO TheoryStepResult
+        theoryStep activeC = do
+          let allConstraints = bgcs ++ (map snd activeC)
+          putStrLn "Theory step"
+          let hcResult = hc allConstraints
+          case hcResult of
+            Nothing -> do
+              putStrLn "HC unsat"
+              forM_ bgcs $ \c -> putStrLn $ " b> " ++ (show c)
+              forM_ activeC $ \c -> putStrLn $ " c> " ++ (show c)
+              let m = hcUnsatMinimal bgcs activeC
+              return $ TheoryUnsatSubset m
+            Just box -> do
+              putStrLn "HC sat"
+              optModel <- optSolverModel box allConstraints
+              putStrLn $ "opt model " ++ (show optModel)
+              if testModel allConstraints optModel then
+                return (TheorySat optModel)
+              else do
+                m <- optUnsatMinimal box bgcs activeC
+                return (TheoryUnsatSubset ( m))
 
-blackboxUnsatCore :: (Show id, Ord id, Show p, Ord p) => ([p] -> IO (Maybe m)) ->
-                     ([(id,p)] -> ([(id,p)],[(id,p)])) ->
-                     [p] -> [(id,p)] -> IO [id]
-blackboxUnsatCore satF split base ps = caseSplit base ps
-  where
-    -- Assumption: satF (base ++ ps) == Nothing
-    -- caseSplit :: [p] -> [(id,p)] -> IO [p]
-    caseSplit base ps = do
-      -- putStrLn $ "ENTERED caseSplit with base=" ++ (show base) ++ ", ps=" ++ (show ps)
-      let (a,b) = split ps
-      -- putStrLn $ "split into " ++ (show (a,b))
-      if length b == 0 then return (map fst a)
+        hc :: [FloatConstraint] -> Maybe Box
+        hc = hullConsistency (trace "numvars" $ traceShowId numVars) (hcRelTol fparams) (hcIter fparams)
+
+        hcUnsatMinimal :: [FloatConstraint] -> [(SAT.Lit, FloatConstraint)] 
+                          -> [SAT.Lit]
+        hcUnsatMinimal bg cs = map (fromJust.fst) (Set.toList min)
+          where
+            min = blackboxUnsatMinimal sat splitSet Set.union
+                    (Set.fromList [(Nothing,c) | c <- bg]) 
+                    (Set.fromList [(Just v, c) | (v,c) <- cs])
+            sat s = isJust (hc (map snd (Set.toList s)))
+
+        optSolverModel :: Box -> [FloatConstraint] -> IO FloatModel
+        optSolverModel b c = nloptSat b goal c
+
+        optUnsatMinimal :: Box -> [FloatConstraint] 
+                           -> [(SAT.Lit,FloatConstraint)] -> IO [SAT.Lit]
+        optUnsatMinimal box bg cs = fmap ((map (fromJust.fst)).(Set.toList)) min
+          where
+            min = blackboxUnsatMinimalM sat splitSet Set.union
+                    (Set.fromList [(Nothing,c) | c <- bg]) 
+                    (Set.fromList [(Just v, c) | (v,c) <- cs])
+            sat s = fmap (testModel (map snd (Set.toList s)))
+                         (optSolverModel box (map snd (Set.toList s)))
+
+splitSet :: Set a -> (Set a, Maybe (Set a))
+splitSet x = (a, if null b then Nothing else (Just b))
+  where (m,half) = (Set.toAscList x, ((Set.size x) `quot` 2) + 1)
+        (a,b)    = (Set.fromDistinctAscList (take half m),
+                    Set.fromDistinctAscList (drop half m))
+
+blackboxUnsatMinimal sat sp jn ba st = runIdentity $
+  (blackboxUnsatMinimalM (\x -> return $ sat x)) sp jn ba st
+
+blackboxUnsatMinimalM :: (Show p, Monad m) => (p -> m Bool)  -- Satisifiable
+                      -> (p -> (p,Maybe p))        -- Split 
+                      -> (p -> p -> p)             -- Join
+                      -> p -> p -> m p             -- Uncond. base + Cond. set
+blackboxUnsatMinimalM sat split join = caseSplit 
+  where 
+    --caseSplit :: p -> p -> m p
+    caseSplit base set = do
+      let (a,b) =  (split set)
+      if isNothing b then return set
       else do
-        -- Try sat base + a
-        satA <- satF (base ++ (map snd a))
-        case satA of
-          Nothing -> caseSplit base a -- base + a is unsat
-          Just modelA -> do  -- base + a is SAT with model
-            -- Try sat base + b
-            satB <- satF (base ++ (map snd b))
-            case satB of
-              Nothing -> caseSplit base b -- base + b is unsat
-              Just modelB -> do
-                -- Both a and b are SAT (under base), so minimize each under the other
-                coreA <- caseSplit (base ++ (map snd b)) a
-                coreB <- caseSplit (base ++ (map snd a)) b
-                return $ nub (coreA ++ coreB)
-
--- TODO get rid of this 
-splitMid :: [a] -> ([a],[a])
-splitMid l = splitAt (((length l) + 1) `div` 2) l
-
-sample :: (Show v, Ord v) => Box v -> IO (FModel v)
-sample m = do
-  n <- sequence [do putStrLn $ "sampling " ++ (show v)
-                    x <- sampleI v
-                    putStrLn $ "  -> " ++ (show (not (isInfinite (I.lowerBound v))))
-                    return (k,x)
-                 | (k,v) <- Map.toList m ]
-  return (Map.fromList n)
-  where
-    sampleI :: Interval -> IO Double
-    sampleI i
--- TODO: remove these cases now that we have finiteSample
-      | not (isNaN (I.finiteSample i)) && not (isInfinite (I.finiteSample i)) = return $ I.finiteSample i
-      | not (isInfinite (I.lowerBound i)) = return $ I.lowerBound i
-      | not (isInfinite (I.upperBound i)) = return $ I.upperBound i
-      | I.member 0.0 i = return 0.0
-      | otherwise = error "could not sample interval"
-
-
--- resultBox :: (Show v, Ord v) => [FConstraint v] -> Box v -> IO (Maybe (FModel v))
--- resultBox cs box = do
---   model <- sample box
---   let test = testModel cs model
---   let g
---         | test      = return $ Just model
---         | otherwise = return $ Nothing
---   g
-
+        satA <- sat (join base a)
+        if not satA then caseSplit base a
+        else do
+          satB <- sat (join base (fromJust b))
+          if not satB then caseSplit base (fromJust b)
+          else do 
+            caseA <- caseSplit (join base (fromJust b)) a
+            caseB <- caseSplit (join base a) (fromJust b)
+            return (join caseA caseB)

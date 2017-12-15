@@ -16,12 +16,15 @@ module SAT.FloatTheory.Interval (
   member,
   finiteSample,
   intersection,
+  negate,
+  hull,
+  abs,
   symmetric,
-  add, sub, mul, invmul, pow, sqrt
+  add, sub, mul, invmul, square, sqrt
   ) where
 
-import Prelude hiding (sqrt)
-import qualified Prelude (sqrt)
+import Prelude hiding (sqrt, negate, abs)
+import qualified Prelude (sqrt, negate, abs)
 
 infty = (read "Infinity") :: Double
 nan = (read "NaN") :: Double
@@ -53,6 +56,10 @@ positive = Interval 0 infty
 negative :: Interval
 negative = Interval (-infty) 0
 
+negate :: Interval -> Interval
+negate (Interval a b) = Interval (min (-a) (-b)) (max (-a) (-b))
+negate _ = Empty
+
 lowerBound :: Interval -> Double
 lowerBound (Interval a b) = a
 lowerBound Empty = nan
@@ -67,7 +74,7 @@ member _ Empty = False
 
 symmetric :: Interval -> Interval
 symmetric (Interval a b) = Interval (-m) m
-  where m = max (abs a) (abs b)
+  where m = max (Prelude.abs a) (Prelude.abs b)
 symmetric Empty = Empty
 
 finiteSample :: Interval -> Double
@@ -84,6 +91,11 @@ intersection a@(Interval a1 a2) b@(Interval b1 b2)
   | noOverlap a b = Empty
   | otherwise = Interval (max a1 b1) (min a2 b2)
 intersection _ _ = Empty
+
+hull :: Interval -> Interval -> Interval
+hull (Interval a1 a2) (Interval b1 b2) = Interval (min a1 b1) (max a2 b2)
+hull Empty x = x
+hull x _ = x
 
 noOverlap :: Interval -> Interval -> Bool
 noOverlap (Interval a1 a2) (Interval b1 b2) = a2 < b1 || b2 < a1
@@ -138,14 +150,15 @@ invmul a@(Interval a1 a2) b@(Interval b1 b2)
     combs = [ddiv a1 b1, ddiv a1 b2, ddiv a2 b1, ddiv a2 b2]
 invmul _ _ = Empty
 
-pow :: Interval -> Int -> Interval
-pow x 0 = singleton 1
-pow x n | n > 0 = f x (n-1) x
-                  where f _ 0 y = y
-                        f x n y = g x n  where
-                                  g x n | even n  = g (mul x x) (n `quot` 2)
-                                        | otherwise = f x (n-1) (mul x y)
-pow _ _            = error "negative exponent"
+square :: Interval -> Interval
+square a = abs (mul a a)
+
+abs :: Interval -> Interval
+abs x@(Interval a b)
+  | a >= 0 = x
+  | b <= 0 = negate x
+  | otherwise = interval 0 (max (-a) b)
+abs _ = Empty
 
 sqrt :: Interval -> Interval
-sqrt = mapIncreasing Prelude.sqrt
+sqrt a = mapIncreasing Prelude.sqrt (abs a)
