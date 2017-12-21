@@ -1,3 +1,11 @@
+# FloatTheory branch
+Experiment in using interval arithmetic and numerical optimization 
+as a floating point theory solver.
+
+Requires the NLOpt library.  When running GHC or GHCi, you must link 
+with the library: `ghci -lnlopt ... `
+
+
 # SAT+
 
 This is a Haskell library for constraint programming using a SAT-solver,
