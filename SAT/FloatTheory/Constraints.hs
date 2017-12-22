@@ -53,7 +53,6 @@ vars (TMul a b) = (vars a) ++ (vars b)
 (.+.) a b = TAdd a b
 
 (.-.) a (TConst 0) = a
-(.-.) (TConst 0) b = b
 (.-.) a b = TSub a b
 
 (.*.) a (TConst 0) = TConst 0
@@ -66,8 +65,8 @@ square (TConst 0) = TConst 0
 square (TConst 1) = TConst 1
 square x = TSqr x
 
-(.==.) a b = CEqz (TSub a b)
-(.<=.) a b = CLez (TSub a b)
+(.==.) a b = CEqz (a .-. b)
+(.<=.) a b = CLez (a .-. b)
 (.>=.) a b = b .<=. a
 
 number = TConst
