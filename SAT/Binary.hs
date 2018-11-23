@@ -203,8 +203,11 @@ instance Equal Binary where
     notEqualOr s pre (pad xs ys) (pad ys xs)
 
 instance Order Binary where
-  lessOr s pre b (Binary xs) (Binary ys) =
-    do lessOr s pre b (pad xs ys) (pad ys xs)
+  lessOr s pre b (Binary xsLSBF) (Binary ysLSBF) =
+    do lessOr s pre b xs ys
+    where xs = reverse (pad xsLSBF ysLSBF)
+          ys = reverse (pad ysLSBF xsLSBF)
+
 
 pad xs ys = xs ++ replicate (length ys - length xs) false
 
