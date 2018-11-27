@@ -29,6 +29,12 @@ module SAT(
   , newSolver
   , deleteSolver
   , withNewSolver
+  , numAssigns
+  , numClauses
+  , numLearnts
+  , numVars
+  , numFreeVars
+  , numConflicts
 
   -- * Literals
   , Lit
@@ -80,6 +86,28 @@ withNewSolver h =
   M.withNewSolver $ \s ->
     do ref <- newIORef Nothing
        h (Solver s ref)
+
+-- | The current number of assigned literals.
+numAssigns :: Solver -> IO Int
+numAssigns (Solver m _) = M.minisat_num_assigns m
+
+-- | The current number of original clauses.
+numClauses :: Solver -> IO Int
+numClauses (Solver m _) = M.minisat_num_clauses m
+
+-- | The current number of learnt clauses.
+numLearnts :: Solver -> IO Int
+numLearnts (Solver m _) = M.minisat_num_learnts m
+
+-- | The current number of variables.
+numVars :: Solver -> IO Int
+numVars (Solver m _) = M.minisat_num_vars m
+
+numFreeVars :: Solver -> IO Int
+numFreeVars (Solver m _) = M.minisat_num_freeVars m
+
+numConflicts :: Solver -> IO Int
+numConflicts (Solver m _) = M.minisat_num_conflicts m
 
 ------------------------------------------------------------------------------
 -- Literals
