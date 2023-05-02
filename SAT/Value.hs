@@ -6,10 +6,11 @@ Description : Reading off the value of things in models
 module SAT.Value where
 
 import SAT ( Solver )
-import qualified SAT       as S
-import qualified SAT.Val   as V
-import qualified SAT.Unary as U
-import qualified SAT.Term  as T
+import qualified SAT        as S
+import qualified SAT.Val    as V
+import qualified SAT.Unary  as U
+import qualified SAT.Term   as T
+import qualified SAT.Binary as B
 
 import Control.Monad ( liftM2, liftM3 )
 
@@ -96,6 +97,11 @@ instance Value T.Term where
   type Type T.Term = Integer
 
   getValue = T.modelValue
+
+instance Value B.Binary where
+  type Type B.Binary = Integer
+
+  getValue = B.modelValue
 
 ------------------------------------------------------------------------------
 

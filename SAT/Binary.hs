@@ -41,7 +41,6 @@ import qualified SAT
 import SAT.Bool
 import SAT.Equal
 import SAT.Order
-import SAT.Value
 import Data.List( insert, sort )
 
 ------------------------------------------------------------------------------
@@ -195,10 +194,6 @@ modelValue s (Binary xs) = go xs
                  return (2*n + if b then 1 else 0)
 
 ------------------------------------------------------------------------------
-
-instance Value Binary where
-  type Type Binary = Integer
-  getValue = modelValue
 
 instance Equal Binary where
   equalOr s pre (Binary xs) (Binary ys) =
