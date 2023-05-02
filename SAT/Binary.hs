@@ -41,6 +41,7 @@ import qualified SAT
 import SAT.Bool
 import SAT.Equal
 import SAT.Order
+import SAT.Value
 import Data.List( insert, sort )
 
 ------------------------------------------------------------------------------
@@ -105,7 +106,7 @@ addList s bs = addBits s [ (k,x) | Binary xs <- bs, (k,x) <- [0..] `zip` xs ]
 
 -- | Adds up a list of digits, annotated with their weight, which is the
 -- placement of the binary digit. This function is used in the functions @addList@
--- and @mul@, but may be useful to uers in its own right.
+-- and @mul@, but may be useful to users in its own right.
 addBits :: Solver -> [(Int,Lit)] -> IO Binary
 addBits s ixs = Binary `fmap` go 0 (sort ixs)
  where
@@ -194,6 +195,10 @@ modelValue s (Binary xs) = go xs
                  return (2*n + if b then 1 else 0)
 
 ------------------------------------------------------------------------------
+
+instance Value Binary where
+  type Type Binary = Integer
+  getValue = modelValue
 
 instance Equal Binary where
   equalOr s pre (Binary xs) (Binary ys) =
